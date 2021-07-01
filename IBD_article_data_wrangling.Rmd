@@ -1,0 +1,1844 @@
+---
+title: "BME_Conference_Xavier_Dataset_Data Wrangling"
+author: "Javier Munoz"
+date: "May/30/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressWarnings(library (ggplot2, verbose = FALSE))
+suppressWarnings(library (readxl, verbose = FALSE))
+suppressWarnings(library (viridisLite, verbose = FALSE))
+suppressWarnings(library (pheatmap, verbose = FALSE))
+suppressWarnings(library (mixOmics, verbose = FALSE))
+suppressWarnings(library(tidyverse, verbose = FALSE))
+suppressWarnings(library(magrittr, verbose = FALSE))
+suppressWarnings(library (dplyr, verbose = FALSE))
+```
+
+# METABOLITES
+
+## Data wrangling Dependent Variable (Y)
+
+Suplemental Material 1 Metabolite feature metadata (8848 rows x 7 columns)
+```{r}
+data_file <- "~/Desktop/IBD_article/Supplementary Dataset 1-Metabolite feature metadata.xlsx"
+if(file.exists(data_file)){
+    Sp1_Metabolite_feature_metadata <- read_excel(path = data_file)
+} else {
+  print("Supplementary Dataset 1- Metabolite feature metadata.xlsx.  Check the location of the file relative to your Rmd file.")
+}
+```
+
+Suplemental Material 2 Per-subject metabolite relative abundance profiles (8855 rows x 221 columns)
+```{r}
+data_file <- "~/Desktop/IBD_article/Supplementary Dataset 2-Per-subject metabolite relative abundance profiles.xlsx"
+if(file.exists(data_file)){
+    Sp2_Per_subject_metabolite_relative_abundance_profiles <- read_excel(path = data_file)
+} else {
+  print("Supplementary Dataset 2-Per-subject metabolite relative abundance profiles.xlsx.  Check the location of the file relative to your Rmd file.")
+}
+```
+
+Supplementary Dataset 1-Metabolite feature metadata.xlsx 
+```{r}
+Sp1_Metabolite_feature_metadata
+```
+Replace NA - Not found
+```{r}
+sp1 <- Sp1_Metabolite_feature_metadata %>% dplyr::select (Feature, Putative_Chemical_Class) 
+```
+```{r}
+sp1 [is.na(sp1)] <- "Not Found"
+sp1
+```
+
+Supplementary Dataset 2-Per-subject metabolite relative abundance profiles.xlsx
+```{r}
+Sp2_Per_subject_metabolite_relative_abundance_profiles
+```
+
+```{r}
+sp2_version1 <- merge (sp1, Sp2_Per_subject_metabolite_relative_abundance_profiles, by = "Feature", all.y = TRUE)
+sp2_version1
+```
+```{r}
+sp2 <- as.data.frame (t(sp2_version1))
+sp2
+names (sp2) <- sp2 %>% slice (1) %>% unlist ()
+sp2<- sp2 %>% slice (-1)
+sp2
+```
+```{r}
+sp2 <- sp2 [-1,]
+sp2
+```
+```{r}
+sp2$Diagnosis
+```
+
+```{r}
+test <- sp2[1:155, ]
+test$Diagnosis
+```
+
+```{r}
+Y.diagnosis <- sp2[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis$Diagnosis
+```
+
+```{r}
+Y.diagnosis %>% select (Diagnosis)
+```
+
+```{r}
+Y.diagnosis <-as.factor (Y.diagnosis$Diagnosis)
+```
+```{r}
+Y.diagnosis
+```
+
+```{r}
+Y.age <- sp2[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age$Age
+```
+```{r}
+Y.age <-as.factor (Y.age$Age)
+```
+```{r}
+Y.age
+```
+
+```{r}
+Y.Fecal.Calprotectin <- sp2 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin <-as.factor (Y.Fecal.Calprotectin$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin
+```
+
+```{r}
+Y.antibiotic <- sp2 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic$antibiotic
+```
+```{r}
+Y.antibiotic <-as.factor (Y.antibiotic$antibiotic)
+```
+```{r}
+Y.antibiotic
+```
+
+```{r}
+Y.immunosuppressant <- sp2 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant <- as.factor(Y.immunosuppressant$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant
+```
+
+```{r}
+Y.steroids <- sp2 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids$steroids
+```
+```{r}
+Y.steroids <-as.factor (Y.steroids$steroids)
+```
+```{r}
+Y.steroids
+```
+
+```{r}
+Y.mesalamine <- sp2 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine$mesalamine
+```
+```{r}
+Y.mesalamine <-as.factor (Y.mesalamine$mesalamine)
+```
+```{r}
+Y.mesalamine
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis, file = "Y_CD_diagnosis_train.xlsx")
+write.xlsx(Y.age, file = "Y_CD_age_train.xlsx")
+write.xlsx(Y.Fecal.Calprotectin, file = "Y_CD_Fecal.Calprotectin_train.xlsx")
+write.xlsx(Y.mesalamine, file = "Y_CD_mesalamine_train.xlsx")
+write.xlsx(Y.steroids, file = "Y_CD_steroids_train.xlsx")
+write.xlsx(Y.antibiotic, file = "Y_CD_antibiotics_train.xlsx")
+write.xlsx(Y.immunosuppressant, file = "Y_CD_immunosuppressants_train.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation <- sp2[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis_validation $Diagnosis
+```
+```{r}
+Y.diagnosis_validation  <-as.factor (Y.diagnosis_validation $Diagnosis)
+```
+```{r}
+Y.diagnosis_validation 
+```
+
+```{r}
+Y.age_validation  <- sp2[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age_validation$Age
+```
+```{r}
+Y.age_validation  <-as.factor (Y.age_validation$Age)
+```
+```{r}
+Y.age_validation 
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation <- sp2 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation <-as.factor (Y.Fecal.Calprotectin_validation$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation
+```
+
+```{r}
+Y.antibiotic_validation <- sp2 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic_validation$antibiotic
+```
+```{r}
+Y.antibiotic_validation <-as.factor (Y.antibiotic_validation$antibiotic)
+```
+```{r}
+Y.antibiotic_validation
+```
+
+```{r}
+Y.immunosuppressant_validation <- sp2 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant_validation <- as.factor(Y.immunosuppressant_validation$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation
+```
+
+```{r}
+Y.steroids_validation <- sp2 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids_validation$steroids
+```
+```{r}
+Y.steroids_validation <-as.factor (Y.steroids_validation$steroids)
+```
+```{r}
+Y.steroids_validation
+```
+
+```{r}
+Y.mesalamine_validation <- sp2 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine_validation$mesalamine
+```
+```{r}
+Y.mesalamine_validation <-as.factor (Y.mesalamine_validation$mesalamine)
+```
+```{r}
+Y.mesalamine_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation, file = "Y_CD_diagnosis_validation.xlsx")
+write.xlsx(Y.age_validation, file = "Y_CD_age_validation.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation, file = "Y_CD_Fecal.Calprotectin_validation.xlsx")
+write.xlsx(Y.mesalamine_validation, file = "Y_CD_mesalamine_validation.xlsx")
+write.xlsx(Y.steroids_validation, file = "Y_CD_steroids_validation.xlsx")
+write.xlsx(Y.antibiotic_validation, file = "Y_CD_antibiotics_validation.xlsx")
+write.xlsx(Y.immunosuppressant_validation, file = "Y_CD_immunosuppressants_validation.xlsx")
+```
+
+## Data wrangling Independent Variable (X)
+
+```{r}
+sp2_version1
+```
+
+```{r}
+Putative_Chemical_class_deffined <- sp2_version1 %>% filter (Putative_Chemical_Class !="Not Found") %>% unite ("Feature", Feature:Putative_Chemical_Class, na.rm =TRUE, remove = FALSE)
+Putative_Chemical_class_deffined
+```
+```{r}
+clinical_info <- sp2_version1 %>% filter (Feature == "antibiotic" | Feature == "Age" | Feature == "Fecal.Calprotectin" | Feature == "immunosuppressant"  | Feature == "mesalamine" | Feature == "steroids") %>% mutate (Putative_Chemical_Class = Feature)        
+clinical_info 
+```
+
+```{r}
+sp2_filtered_raw <- rbind (clinical_info, Putative_Chemical_class_deffined) 
+sp2_filtered_raw <- sp2_filtered_raw [, -2]
+sp2_filtered_raw
+```
+
+```{r}
+sp2_filtered <- as.data.frame (t(sp2_filtered_raw))
+sp2_filtered
+names (sp2_filtered) <- sp2_filtered %>% slice (1) %>% unlist ()
+sp2_filtered <- sp2_filtered %>% slice (-1)
+sp2_filtered
+```
+
+```{r}
+sp2_filtered.1 <- subset (sp2_filtered, select = -c(Age, antibiotic, Fecal.Calprotectin, immunosuppressant, mesalamine, steroids))
+sp2_filtered.1
+```
+
+```{r}
+sp2_filtered.1 [] <- lapply(sp2_filtered.1, as.numeric)
+sp2_filtered.1 
+```
+
+```{r}
+sp2_version1 <- merge (sp1, Sp2_Per_subject_metabolite_relative_abundance_profiles, by = "Feature", all.y = TRUE)
+sp2_version1
+column.names <- colnames (sp2_version1)
+column.names <- as_vector (column.names) 
+column.names <- column.names [c(-1,-2)]
+sp2_filtered.1 <- sp2_filtered.1 %>% mutate (Samples = column.names, .before = "C18-neg_Cluster_0004_Styrenes")
+sp2_filtered.1 
+```
+
+```{r}
+write.xlsx(sp2_filtered.1 , file = "sp2_edited_Xavier.xlsx")
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sp2_edited_Xavier.xlsx"
+if(file.exists(data_file)){
+    sp2_edited <- read_excel(path = data_file)
+} else {
+  print("sp2_edited_Xavier.  Check the location of the file relative to your Rmd file.")
+}
+sp2_edited
+```
+```{r}
+sp2_training_data <- sp2_edited %>% filter (str_detect (Samples,"PRISM"))
+sp2_training_data 
+```
+
+```{r}
+CD_train <- sp2[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+CD_train_list <- CD_train [0]
+CD_train_list
+```
+
+```{r}
+sp2_training_data_CD1 <- sp2_training_data %>% filter (sp2_training_data$Samples == "PRISM|7122" |sp2_training_data$Samples == "PRISM|7147"|sp2_training_data$Samples == "PRISM|7150" | sp2_training_data$Samples == "PRISM|7153" |sp2_training_data$Samples == "PRISM|7184" |sp2_training_data$Samples == "PRISM|7238" |sp2_training_data$Samples == "PRISM|7406" |sp2_training_data$Samples == "PRISM|7408" |sp2_training_data$Samples == "PRISM|7421" |sp2_training_data$Samples == "PRISM|7445" |sp2_training_data$Samples == "PRISM|7486" |sp2_training_data$Samples == "PRISM|7547" |sp2_training_data$Samples == "PRISM|7658" |sp2_training_data$Samples == "PRISM|7662" |sp2_training_data$Samples == "PRISM|7744" |sp2_training_data$Samples == "PRISM|7759" |sp2_training_data$Samples == "PRISM|7791" |sp2_training_data$Samples == "PRISM|7843" |sp2_training_data$Samples == "PRISM|7847" |sp2_training_data$Samples == "PRISM|7855" |sp2_training_data$Samples == "PRISM|7858" |sp2_training_data$Samples == "PRISM|7860" |sp2_training_data$Samples == "PRISM|7861" |sp2_training_data$Samples == "PRISM|7862" |sp2_training_data$Samples == "PRISM|7870" |sp2_training_data$Samples == "PRISM|7874" |sp2_training_data$Samples == "PRISM|7875" |sp2_training_data$Samples == "PRISM|7875" |sp2_training_data$Samples == "PRISM|7879" |sp2_training_data$Samples == "PRISM|7899" |sp2_training_data$Samples == "PRISM|7904" |sp2_training_data$Samples == "PRISM|7906" |sp2_training_data$Samples == "PRISM|7908" |sp2_training_data$Samples == "PRISM|7909" |sp2_training_data$Samples == "PRISM|7910" |sp2_training_data$Samples == "PRISM|7911" |sp2_training_data$Samples == "PRISM|7912" |sp2_training_data$Samples == "PRISM|7938" |sp2_training_data$Samples == "PRISM|7941" |sp2_training_data$Samples == "PRISM|7947"| sp2_training_data$Samples == "PRISM|7948" |sp2_training_data$Samples == "PRISM|7955" |sp2_training_data$Samples == "PRISM|7971" |sp2_training_data$Samples == "PRISM|7989" |sp2_training_data$Samples == "PRISM|8095" |sp2_training_data$Samples == "PRISM|8226" |sp2_training_data$Samples == "PRISM|8244" |sp2_training_data$Samples == "PRISM|8264" |sp2_training_data$Samples == "PRISM|8283" |sp2_training_data$Samples == "PRISM|8332" |sp2_training_data$Samples == "PRISM|8336" |sp2_training_data$Samples == "PRISM|8361" |sp2_training_data$Samples == "PRISM|8374"| sp2_training_data$Samples == "PRISM|8377" |sp2_training_data$Samples == "PRISM|8406" |sp2_training_data$Samples == "PRISM|8452" |sp2_training_data$Samples == "PRISM|8462" |sp2_training_data$Samples == "PRISM|8466" |sp2_training_data$Samples == "PRISM|8467" |sp2_training_data$Samples == "PRISM|8475" |sp2_training_data$Samples == "PRISM|8483" |sp2_training_data$Samples == "PRISM|8485" |sp2_training_data$Samples == "PRISM|8496" |sp2_training_data$Samples == "PRISM|8523" |sp2_training_data$Samples == "PRISM|8534" |sp2_training_data$Samples == "PRISM|8537" |sp2_training_data$Samples == "PRISM|8550" |sp2_training_data$Samples == "PRISM|8564" |sp2_training_data$Samples == "PRISM|8565" |sp2_training_data$Samples == "PRISM|8573" |sp2_training_data$Samples == "PRISM|8577" |sp2_training_data$Samples == "PRISM|8589" |sp2_training_data$Samples == "PRISM|8591" |sp2_training_data$Samples == "PRISM|8592" |sp2_training_data$Samples == "PRISM|8624" )
+sp2_training_data_CD1
+```
+```{r}
+sp2_training_data_CD2 <- sp2_training_data %>% filter(sp2_training_data$Samples == "PRISM|8629" |sp2_training_data$Samples == "PRISM|8675" |sp2_training_data$Samples == "PRISM|8683" |sp2_training_data$Samples == "PRISM|8746" |sp2_training_data$Samples == "PRISM|8749" | sp2_training_data$Samples == "PRISM|8753" |sp2_training_data$Samples == "PRISM|8754" |sp2_training_data$Samples == "PRISM|8758" |sp2_training_data$Samples == "PRISM|8764" |sp2_training_data$Samples == "PRISM|8765"| sp2_training_data$Samples == "PRISM|8774" |sp2_training_data$Samples == "PRISM|8776" |sp2_training_data$Samples == "PRISM|8783" |sp2_training_data$Samples == "PRISM|8784" |sp2_training_data$Samples == "PRISM|8788" |sp2_training_data$Samples == "PRISM|8789" |sp2_training_data$Samples == "PRISM|8794" |sp2_training_data$Samples == "PRISM|8800" |sp2_training_data$Samples == "PRISM|8802" |sp2_training_data$Samples == "PRISM|8806" |sp2_training_data$Samples == "PRISM|8807" |sp2_training_data$Samples == "PRISM|8841" |sp2_training_data$Samples == "PRISM|8843" |sp2_training_data$Samples == "PRISM|8847" |sp2_training_data$Samples == "PRISM|8878" |sp2_training_data$Samples == "PRISM|8892"| sp2_training_data$Samples == "PRISM|9126" |sp2_training_data$Samples == "PRISM|9148")
+sp2_training_data_CD2
+```
+
+```{r}
+sp2_training_data_CD <- rbind (sp2_training_data_CD1, sp2_training_data_CD2)
+sp2_training_data_CD
+```
+
+```{r}
+X_train <- subset (sp2_training_data_CD, select = -c(Samples))
+X_train 
+```
+
+```{r}
+X_train <- log (X_train+1)
+X_train
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train, file = "X_CD_metabolites_train.xlsx")
+```
+
+```{r}
+sp2_edited
+```
+
+```{r}
+sp2_validation_data <- sp2[155:221, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+sp2_validation_data
+```
+
+```{r}
+CD_metabolite_validation_list <- sp2_validation_data [0]
+CD_metabolite_validation_list
+```
+
+```{r}
+sp2_validation_CD <- sp2_edited %>% filter (sp2_edited$Samples == "Validation|LLDeep_0001"|sp2_edited$Samples == "Validation|LLDeep_0003"|sp2_edited$Samples == "Validation|LLDeep_0010" | sp2_edited$Samples == "Validation|LLDeep_0011"|sp2_edited$Samples == "Validation|LLDeep_0012"|sp2_edited$Samples == "Validation|LLDeep_0015" |sp2_edited$Samples == "Validation|LLDeep_0018" |sp2_edited$Samples == "Validation|LLDeep_0021" |sp2_edited$Samples == "Validation|LLDeep_0022" |sp2_edited$Samples == "Validation|LLDeep_0024" |sp2_edited$Samples == "Validation|LLDeep_0026" |sp2_edited$Samples == "Validation|LLDeep_0027" |sp2_edited$Samples == "Validation|LLDeep_0028" |sp2_edited$Samples == "Validation|LLDeep_0029" |sp2_edited$Samples == "Validation|LLDeep_0030" |sp2_edited$Samples == "Validation|LLDeep_0033" |sp2_edited$Samples == "Validation|LLDeep_0034" |sp2_edited$Samples == "Validation|LLDeep_0037" |sp2_edited$Samples == "Validation|LLDeep_0039" |sp2_edited$Samples == "Validation|LLDeep_0043" |sp2_edited$Samples == "Validation|LLDeep_0047" |sp2_edited$Samples == "Validation|LLDeep_0052" |sp2_edited$Samples == "Validation|UMCGIBD00072" |sp2_edited$Samples == "Validation|UMCGIBD00030"|sp2_edited$Samples == "Validation|UMCGIBD00032"| sp2_edited$Samples == "Validation|UMCGIBD00145" |sp2_edited$Samples == "Validation|UMCGIBD00485"|sp2_edited$Samples == "Validation|UMCGIBD00041"|sp2_edited$Samples == "Validation|UMCGIBD00126" |sp2_edited$Samples == "Validation|UMCGIBD00082"|sp2_edited$Samples == "Validation|UMCGIBD00442"|sp2_edited$Samples == "Validation|UMCGIBD00077" |sp2_edited$Samples == "Validation|UMCGIBD00141"|sp2_edited$Samples == "Validation|UMCGIBD00112" |sp2_edited$Samples == "Validation|UMCGIBD00508" |sp2_edited$Samples == "Validation|UMCGIBD00106"|sp2_edited$Samples == "Validation|UMCGIBD00458" |sp2_edited$Samples == "Validation|UMCGIBD00254" |sp2_edited$Samples == "Validation|UMCGIBD00233"|sp2_edited$Samples == "Validation|UMCGIBD00238" |sp2_edited$Samples == "Validation|UMCGIBD00027" |sp2_edited$Samples == "Validation|UMCGIBD00064")
+sp2_validation_CD 
+```
+
+```{r}
+X_CD_metabolites_validation <- subset (sp2_validation_CD , select = -c(Samples))
+X_CD_metabolites_validation 
+```
+
+```{r}
+X_CD_metabolites_validation <- log (X_CD_metabolites_validation+1)
+X_CD_metabolites_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_CD_metabolites_validation, file = "X_CD_metabolites_validation.xlsx")
+```
+
+# Ulcerative Colitis
+
+```{r}
+sp2$Diagnosis
+```
+
+```{r}
+test <- sp2[1:155, ]
+test
+```
+
+```{r}
+Y.diagnosis_UC <- sp2[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_UC$Diagnosis
+```
+```{r}
+Y.diagnosis_UC <-as.factor (Y.diagnosis_UC$Diagnosis)
+```
+```{r}
+Y.diagnosis_UC
+```
+
+```{r}
+Y.age_UC <- sp2[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_UC$Age
+```
+```{r}
+Y.age_UC <-as.factor (Y.age_UC$Age)
+```
+```{r}
+Y.age_UC
+```
+
+```{r}
+Y.Fecal.Calprotectin_UC <- sp2 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_UC$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_UC <-as.factor (Y.Fecal.Calprotectin_UC$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_UC
+```
+
+```{r}
+Y.antibiotic_UC <- sp2 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_UC$antibiotic
+```
+```{r}
+Y.antibiotic_UC <-as.factor (Y.antibiotic_UC$antibiotic)
+```
+```{r}
+Y.antibiotic_UC
+```
+
+```{r}
+Y.immunosuppressant_UC <- sp2 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_UC <- as.factor(Y.immunosuppressant_UC$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_UC
+```
+
+```{r}
+Y.steroids_UC <- sp2 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_UC$steroids
+```
+```{r}
+Y.steroids_UC <-as.factor (Y.steroids_UC$steroids)
+```
+```{r}
+Y.steroids_UC
+```
+
+```{r}
+Y.mesalamine_UC <- sp2 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_UC$mesalamine
+```
+```{r}
+Y.mesalamine_UC <-as.factor (Y.mesalamine_UC$mesalamine)
+```
+```{r}
+Y.mesalamine_UC
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_UC, file = "Y_UC_diagnosis_train.xlsx")
+write.xlsx(Y.age_UC, file = "Y_UC_age_train.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_UC, file = "Y_UC_Fecal.Calprotectin_train.xlsx")
+write.xlsx(Y.mesalamine_UC, file = "Y_UC_mesalamine_train.xlsx")
+write.xlsx(Y.steroids_UC, file = "Y_UC_steroids_train.xlsx")
+write.xlsx(Y.antibiotic_UC, file = "Y_UC_antibiotics_train.xlsx")
+write.xlsx(Y.immunosuppressant_UC, file = "Y_UC_immunosuppressants_train.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation_UC <- sp2[156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_validation_UC$Diagnosis
+```
+```{r}
+Y.diagnosis_validation_UC  <-as.factor (Y.diagnosis_validation_UC$Diagnosis)
+```
+```{r}
+Y.diagnosis_validation_UC
+```
+
+```{r}
+Y.age_validation_UC <- sp2[156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_validation_UC$Age
+```
+```{r}
+Y.age_validation_UC <-as.factor (Y.age_validation_UC$Age)
+```
+```{r}
+Y.age_validation_UC
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation_UC <- sp2 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation_UC$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC <-as.factor (Y.Fecal.Calprotectin_validation_UC$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC
+```
+
+```{r}
+Y.antibiotic_validation_UC <- sp2 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_validation_UC$antibiotic
+```
+```{r}
+Y.antibiotic_validation_UC <-as.factor (Y.antibiotic_validation_UC$antibiotic)
+```
+```{r}
+Y.antibiotic_validation_UC
+```
+
+```{r}
+Y.immunosuppressant_validation_UC <- sp2 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_validation_UC <- as.factor(Y.immunosuppressant_validation_UC$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation_UC
+```
+
+```{r}
+Y.steroids_validation_UC <- sp2 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_validation_UC$steroids
+```
+```{r}
+Y.steroids_validation_UC <-as.factor (Y.steroids_validation_UC$steroids)
+```
+```{r}
+Y.steroids_validation_UC
+```
+
+```{r}
+Y.mesalamine_validation_UC <- sp2 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_validation_UC$mesalamine
+```
+```{r}
+Y.mesalamine_validation_UC <-as.factor (Y.mesalamine_validation_UC$mesalamine)
+```
+```{r}
+Y.mesalamine_validation_UC
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation_UC, file = "Y_UC_diagnosis_validation.xlsx")
+write.xlsx(Y.age_validation_UC, file = "Y_UC_age_validation.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation_UC, file = "Y_UC_Fecal.Calprotectin_validation.xlsx")
+write.xlsx(Y.mesalamine_validation_UC, file = "Y_UC_mesalamine_validation.xlsx")
+write.xlsx(Y.steroids_validation_UC, file = "Y_UC_steroids_validation.xlsx")
+write.xlsx(Y.antibiotic_validation_UC, file = "Y_UC_antibiotics_validation.xlsx")
+write.xlsx(Y.immunosuppressant_validation_UC, file = "Y_UC_immunosuppressants_validation.xlsx")
+```
+
+```{r}
+sp2_edited
+```
+```{r}
+sp2_training_data_UC <- sp2_edited %>% filter (str_detect (Samples,"PRISM"))
+sp2_training_data_UC 
+```
+
+```{r}
+UC_train <- sp2[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+UC_train_list <- UC_train [0]
+UC_train_list
+```
+
+```{r}
+sp2_training_data_UC <- sp2_training_data_UC %>% filter (sp2_training_data_UC$Samples == "PRISM|7496" |sp2_training_data_UC$Samples == "PRISM|7506"|sp2_training_data_UC$Samples == "PRISM|7662" | sp2_training_data_UC$Samples == "PRISM|7762" |sp2_training_data_UC$Samples == "PRISM|7776"|sp2_training_data_UC$Samples == "PRISM|7847" |sp2_training_data_UC$Samples == "PRISM|7852" |sp2_training_data_UC$Samples == "PRISM|7855" |sp2_training_data_UC$Samples == "PRISM|7858" |sp2_training_data_UC$Samples == "PRISM|7860" |sp2_training_data_UC$Samples == "PRISM|7861" |sp2_training_data_UC$Samples == "PRISM|7862" |sp2_training_data_UC$Samples == "PRISM|7870" |sp2_training_data_UC$Samples == "PRISM|7874"|sp2_training_data_UC$Samples == "PRISM|7879" | sp2_training_data_UC$Samples == "PRISM|7897" |sp2_training_data_UC$Samples == "PRISM|7899" |sp2_training_data_UC$Samples == "PRISM|7904" |sp2_training_data_UC$Samples == "PRISM|7906" |sp2_training_data_UC$Samples == "PRISM|7908" |sp2_training_data_UC$Samples == "PRISM|7909" |sp2_training_data_UC$Samples == "PRISM|7910" |sp2_training_data_UC$Samples == "PRISM|7911"|sp2_training_data_UC$Samples == "PRISM|7912" |sp2_training_data_UC$Samples == "PRISM|7955"|sp2_training_data_UC$Samples == "PRISM|8096" | sp2_training_data_UC$Samples == "PRISM|8101" |sp2_training_data_UC$Samples == "PRISM|8106" |sp2_training_data_UC$Samples == "PRISM|8129" |sp2_training_data_UC$Samples == "PRISM|8244" |sp2_training_data_UC$Samples == "PRISM|8275" |sp2_training_data_UC$Samples == "PRISM|8283" |sp2_training_data_UC$Samples == "PRISM|8332" |sp2_training_data_UC$Samples == "PRISM|8441" |sp2_training_data_UC$Samples == "PRISM|8444"|sp2_training_data_UC$Samples == "PRISM|8447" |sp2_training_data_UC$Samples =="PRISM|8458"|sp2_training_data_UC$Samples == "PRISM|8464" | sp2_training_data_UC$Samples == "PRISM|8480" |sp2_training_data_UC$Samples == "PRISM|8502" |sp2_training_data_UC$Samples == "PRISM|8503" |sp2_training_data_UC$Samples == "PRISM|8511" |sp2_training_data_UC$Samples == "PRISM|8513" |sp2_training_data_UC$Samples == "PRISM|8515" |sp2_training_data_UC$Samples == "PRISM|8589" |sp2_training_data_UC$Samples == "PRISM|8605"|sp2_training_data_UC$Samples == "PRISM|8628" |sp2_training_data_UC$Samples == "PRISM|8667"|sp2_training_data_UC$Samples == "PRISM|8683" | sp2_training_data_UC$Samples == "PRISM|8692" |sp2_training_data_UC$Samples == "PRISM|8696" |sp2_training_data_UC$Samples == "PRISM|8728" |sp2_training_data_UC$Samples == "PRISM|8734" |sp2_training_data_UC$Samples == "PRISM|8735" |sp2_training_data_UC$Samples == "PRISM|8754" |sp2_training_data_UC$Samples == "PRISM|8764" |sp2_training_data_UC$Samples == "PRISM|8765"|sp2_training_data_UC$Samples == "PRISM|8774" |sp2_training_data_UC$Samples == "PRISM|8776"|sp2_training_data_UC$Samples == "PRISM|8778" | sp2_training_data_UC$Samples == "PRISM|8784" |sp2_training_data_UC$Samples == "PRISM|8785" |sp2_training_data_UC$Samples == "PRISM|8788" |sp2_training_data_UC$Samples == "PRISM|8789" |sp2_training_data_UC$Samples == "PRISM|8795" |sp2_training_data_UC$Samples == "PRISM|8803" |sp2_training_data_UC$Samples == "PRISM|8805" |sp2_training_data_UC$Samples == "PRISM|8809"|sp2_training_data_UC$Samples == "PRISM|8815" |sp2_training_data_UC$Samples == "PRISM|8844"|sp2_training_data_UC$Samples == "PRISM|8846" | sp2_training_data_UC$Samples == "PRISM|8849" |sp2_training_data_UC$Samples == "PRISM|8882" |sp2_training_data_UC$Samples == "PRISM|8894" |sp2_training_data_UC$Samples == "PRISM|8898" |sp2_training_data_UC$Samples == "PRISM|8924" |sp2_training_data_UC$Samples == "PRISM|8932" |sp2_training_data_UC$Samples == "PRISM|8982" |sp2_training_data_UC$Samples == "PRISM|8998"|sp2_training_data_UC$Samples == "PRISM|9010" |sp2_training_data_UC$Samples == "PRISM|9018"|sp2_training_data_UC$Samples == "PRISM|9030" | sp2_training_data_UC$Samples == "PRISM|9033" |sp2_training_data_UC$Samples == "PRISM|9074" |sp2_training_data_UC$Samples == "PRISM|9079" |sp2_training_data_UC$Samples == "PRISM|9126" |sp2_training_data_UC$Samples == "PRISM|9148")
+sp2_training_data_UC
+```
+
+```{r}
+X_train_UC <- subset (sp2_training_data_UC, select = -c(Samples))
+X_train_UC
+```
+
+```{r}
+X_train_UC <- log (X_train_UC+1)
+X_train_UC
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train_UC, file = "X_UC_metabolites_train.xlsx")
+```
+
+```{r}
+sp2_edited
+```
+
+```{r}
+sp2_validation_data_UC <- sp2[155:221, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+sp2_validation_data_UC
+```
+
+```{r}
+UC_metabolite_validation_list <- sp2_validation_data_UC [0]
+UC_metabolite_validation_list
+```
+
+```{r}
+sp2_validation_UC <- sp2_edited %>% filter (sp2_edited$Samples == "Validation|LLDeep_0001"|sp2_edited$Samples == "Validation|LLDeep_0003"|sp2_edited$Samples == "Validation|LLDeep_0010" | sp2_edited$Samples == "Validation|LLDeep_0011"|sp2_edited$Samples == "Validation|LLDeep_0012"|sp2_edited$Samples == "Validation|LLDeep_0015" |sp2_edited$Samples == "Validation|LLDeep_0018" |sp2_edited$Samples == "Validation|LLDeep_0021" |sp2_edited$Samples == "Validation|LLDeep_0022" |sp2_edited$Samples == "Validation|LLDeep_0024" |sp2_edited$Samples == "Validation|LLDeep_0026" |sp2_edited$Samples == "Validation|LLDeep_0027" |sp2_edited$Samples == "Validation|LLDeep_0028" |sp2_edited$Samples == "Validation|LLDeep_0029" |sp2_edited$Samples == "Validation|LLDeep_0030" |sp2_edited$Samples == "Validation|LLDeep_0033" |sp2_edited$Samples == "Validation|LLDeep_0034" |sp2_edited$Samples == "Validation|LLDeep_0037" |sp2_edited$Samples == "Validation|LLDeep_0039" |sp2_edited$Samples == "Validation|LLDeep_0043" |sp2_edited$Samples == "Validation|LLDeep_0047" |sp2_edited$Samples == "Validation|LLDeep_0052" |sp2_edited$Samples == "Validation|UMCGIBD00122" |sp2_edited$Samples == "Validation|UMCGIBD00167"|sp2_edited$Samples == "Validation|UMCGIBD00208"| sp2_edited$Samples == "Validation|UMCGIBD00529" |sp2_edited$Samples == "Validation|UMCGIBD00371"|sp2_edited$Samples == "Validation|UMCGIBD00613"|sp2_edited$Samples == "Validation|UMCGIBD00004" |sp2_edited$Samples == "Validation|UMCGIBD00053"|sp2_edited$Samples == "Validation|UMCGIBD00269"|sp2_edited$Samples == "Validation|UMCGIBD00250" |sp2_edited$Samples == "Validation|UMCGIBD00327"|sp2_edited$Samples == "Validation|UMCGIBD00249" |sp2_edited$Samples == "Validation|UMCGIBD00461" |sp2_edited$Samples == "Validation|UMCGIBD00266"|sp2_edited$Samples == "Validation|UMCGIBD00347" |sp2_edited$Samples == "Validation|UMCGIBD00645" |sp2_edited$Samples == "Validation|UMCGIBD00361"|sp2_edited$Samples == "Validation|UMCGIBD00412" |sp2_edited$Samples == "Validation|UMCGIBD00539" |sp2_edited$Samples == "Validation|UMCGIBD00389"|sp2_edited$Samples == "Validation|UMCGIBD00588" |sp2_edited$Samples == "Validation|UMCGIBD00393"|sp2_edited$Samples == "Validation|UMCGIBD00593")
+sp2_validation_UC 
+```
+
+```{r}
+X_UC_metabolites_validation <- subset (sp2_validation_UC , select = -c(Samples))
+X_UC_metabolites_validation 
+```
+
+```{r}
+X_UC_metabolites_validation <- log (X_UC_metabolites_validation+1)
+X_UC_metabolites_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_UC_metabolites_validation, file = "X_UC_metabolites_validation.xlsx")
+```
+
+
+# MICROBIOTA
+
+## Data wrangling Dependent Variable (Y)
+
+Suplemental Material 1 Metabolite feature metadata (209 rows x 221 columns)
+```{r}
+data_file <- "~/Desktop/IBD_article/Supplementary Dataset 4-Per-subject microbial species relative abundance profiles.xlsx"
+if(file.exists(data_file)){
+    Sp4_Per_subject_microbiota_relative_abundance_profiles <- read_excel(path = data_file)
+} else {
+  print("Supplementary Dataset 4-Per-microbial metabolite relative abundance profiles.xlsx.  Check the location of the file relative to your Rmd file.")
+}
+```
+
+Supplementary Dataset 4-Per-subject microbial species relative abundance profiles.xlsx
+```{r}
+Sp4_Per_subject_microbiota_relative_abundance_profiles
+```
+
+```{r}
+sp4 <- as.data.frame (t(Sp4_Per_subject_microbiota_relative_abundance_profiles))
+sp4
+names (sp4) <- sp4 %>% slice (1) %>% unlist ()
+sp4<- sp4 %>% slice (-1)
+sp4
+```
+```{r}
+sp4$Diagnosis
+```
+
+```{r}
+test <- sp4[1:155, ]
+test$Diagnosis
+```
+
+```{r}
+Y.diagnosis.microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis.microbiota$Diagnosis
+```
+
+```{r}
+Y.diagnosis.microbiota %>% select (Diagnosis)
+```
+
+```{r}
+Y.diagnosis.microbiota <-as.factor (Y.diagnosis.microbiota$Diagnosis)
+```
+```{r}
+Y.diagnosis.microbiota
+```
+
+```{r}
+Y.age.microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age.microbiota$Age
+```
+```{r}
+Y.age.microbiota <-as.factor (Y.age.microbiota$Age)
+```
+```{r}
+Y.age.microbiota
+```
+
+```{r}
+Y.Fecal.Calprotectin.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin.microbiota$Fecal.Calprotectin
+```
+```{r}
+Y.Fecal.Calprotectin.microbiota <-as.factor (Y.Fecal.Calprotectin.microbiota$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin.microbiota
+```
+
+```{r}
+Y.antibiotic.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic.microbiota$antibiotic
+```
+```{r}
+Y.antibiotic.microbiota <-as.factor (Y.antibiotic.microbiota$antibiotic)
+```
+```{r}
+Y.antibiotic.microbiota
+```
+
+```{r}
+Y.immunosuppressant.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant.microbiota <- as.factor(Y.immunosuppressant.microbiota$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant.microbiota
+```
+
+```{r}
+Y.steroids.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids.microbiota$steroids
+```
+```{r}
+Y.steroids.microbiota <-as.factor (Y.steroids.microbiota$steroids)
+```
+```{r}
+Y.steroids.microbiota
+```
+
+```{r}
+Y.mesalamine.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine.microbiota$mesalamine
+```
+```{r}
+Y.mesalamine.microbiota <-as.factor (Y.mesalamine.microbiota$mesalamine)
+```
+```{r}
+Y.mesalamine.microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis.microbiota, file = "Y_CD_diagnosis_train_microbiota.xlsx")
+write.xlsx(Y.age.microbiota, file = "Y_CD_age_train_microbiota.xlsx")
+write.xlsx(Y.Fecal.Calprotectin.microbiota, file = "Y_CD_Fecal.Calprotectin_train_microbiota.xlsx")
+write.xlsx(Y.mesalamine.microbiota, file = "Y_CD_mesalamine_train_microbiota.xlsx")
+write.xlsx(Y.steroids.microbiota, file = "Y_CD_steroids_train_microbiota.xlsx")
+write.xlsx(Y.antibiotic.microbiota, file = "Y_CD_antibiotics_train_microbiota.xlsx")
+write.xlsx(Y.immunosuppressant.microbiota, file = "Y_CD_immunosuppressants_train_microbiota.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation.microbiota <- sp4[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis_validation.microbiota$Diagnosis
+```
+```{r}
+Y.diagnosis_validation.microbiota  <-as.factor (Y.diagnosis_validation.microbiota$Diagnosis)
+```
+```{r}
+Y.diagnosis_validation.microbiota 
+```
+
+```{r}
+Y.age_validation.microbiota  <- sp4[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age_validation.microbiota$Age
+```
+```{r}
+Y.age_validation.microbiota  <-as.factor (Y.age_validation.microbiota$Age)
+```
+```{r}
+Y.age_validation.microbiota
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation.microbiota$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation.microbiota <-as.factor (Y.Fecal.Calprotectin_validation.microbiota$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation.microbiota
+```
+
+```{r}
+Y.antibiotic_validation.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic_validation.microbiota$antibiotic
+```
+```{r}
+Y.antibiotic_validation.microbiota <-as.factor (Y.antibiotic_validation.microbiota$antibiotic)
+```
+```{r}
+Y.antibiotic_validation.microbiota
+```
+
+```{r}
+Y.immunosuppressant_validation.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant_validation.microbiota <- as.factor(Y.immunosuppressant_validation.microbiota$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation.microbiota
+```
+
+```{r}
+Y.steroids_validation.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids_validation.microbiota$steroids
+```
+```{r}
+Y.steroids_validation.microbiota <-as.factor (Y.steroids_validation.microbiota$steroids)
+```
+```{r}
+Y.steroids_validation.microbiota
+```
+
+```{r}
+Y.mesalamine_validation.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine_validation.microbiota$mesalamine
+```
+```{r}
+Y.mesalamine_validation.microbiota <-as.factor (Y.mesalamine_validation.microbiota$mesalamine)
+```
+```{r}
+Y.mesalamine_validation.microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation.microbiota, file = "Y_CD_diagnosis_validation_microbiota.xlsx")
+write.xlsx(Y.age_validation.microbiota, file = "Y_CD_age_validation_microbiota.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation.microbiota, file = "Y_CD_Fecal.Calprotectin_validation_microbiota.xlsx")
+write.xlsx(Y.mesalamine_validation.microbiota, file = "Y_CD_mesalamine_validation_microbiota.xlsx")
+write.xlsx(Y.steroids_validation.microbiota, file = "Y_CD_steroids_validation_microbiota.xlsx")
+write.xlsx(Y.antibiotic_validation.microbiota, file = "Y_CD_antibiotics_validation_microbiota.xlsx")
+write.xlsx(Y.immunosuppressant_validation.microbiota, file = "Y_CD_immunosuppressants_validation_microbiota.xlsx")
+```
+
+## Data wrangling Independent Variable (X)
+
+```{r}
+sp4
+```
+
+```{r}
+sp4_filtered <- subset (sp4, select = -c(SRA_metagenome_name, Age, Diagnosis, antibiotic, Fecal.Calprotectin, immunosuppressant, mesalamine, steroids))
+sp4_filtered
+```
+
+```{r}
+sp4_filtered [] <- lapply(sp4_filtered, as.numeric)
+sp4_filtered 
+```
+```{r}
+Sp4_Per_subject_microbiota_relative_abundance_profiles
+```
+
+```{r}
+column.names.microbiota <- colnames (Sp4_Per_subject_microbiota_relative_abundance_profiles)
+column.names.microbiota <- as_vector (column.names.microbiota) 
+column.names.microbiota <- column.names.microbiota[(-1)]
+sp4_filtered <- sp4_filtered %>% mutate (Samples = column.names.microbiota, .before = "Methanobrevibacter_smithii")
+sp4_filtered
+```
+
+```{r}
+write.xlsx(sp4_filtered , file = "sp4_edited_Xavier.xlsx")
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sp4_edited_Xavier.xlsx"
+if(file.exists(data_file)){
+    sp4_edited <- read_excel(path = data_file)
+} else {
+  print("sp2_edited_Xavier.  Check the location of the file relative to your Rmd file.")
+}
+sp4_edited
+```
+```{r}
+sp4_training_data <- sp4_edited %>% filter (str_detect (Samples,"PRISM"))
+sp4_training_data 
+```
+
+```{r}
+CD_train_microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+CD_train_list_microbiota <- CD_train_microbiota [0]
+CD_train_list_microbiota
+```
+
+```{r}
+sp4_training_data_CD1 <- sp4_training_data %>% filter (sp4_training_data$Samples == "PRISM|7122" |sp4_training_data$Samples == "PRISM|7147"|sp4_training_data$Samples == "PRISM|7150" | sp4_training_data$Samples == "PRISM|7153" |sp4_training_data$Samples == "PRISM|7184" |sp4_training_data$Samples == "PRISM|7238" |sp4_training_data$Samples == "PRISM|7406" |sp4_training_data$Samples == "PRISM|7408" |sp4_training_data$Samples == "PRISM|7421" |sp4_training_data$Samples == "PRISM|7445" |sp4_training_data$Samples == "PRISM|7486" |sp4_training_data$Samples == "PRISM|7547" |sp4_training_data$Samples == "PRISM|7658" |sp4_training_data$Samples == "PRISM|7662" |sp4_training_data$Samples == "PRISM|7744" |sp4_training_data$Samples == "PRISM|7759" |sp4_training_data$Samples == "PRISM|7791" |sp4_training_data$Samples == "PRISM|7843" |sp4_training_data$Samples == "PRISM|7847" |sp4_training_data$Samples == "PRISM|7855" |sp4_training_data$Samples == "PRISM|7858" |sp4_training_data$Samples == "PRISM|7860" |sp4_training_data$Samples == "PRISM|7861" |sp4_training_data$Samples == "PRISM|7862" |sp4_training_data$Samples == "PRISM|7870" |sp4_training_data$Samples == "PRISM|7874" |sp4_training_data$Samples == "PRISM|7875" |sp4_training_data$Samples == "PRISM|7875" |sp4_training_data$Samples == "PRISM|7879" |sp4_training_data$Samples == "PRISM|7899" |sp4_training_data$Samples == "PRISM|7904" |sp4_training_data$Samples == "PRISM|7906" |sp4_training_data$Samples == "PRISM|7908" |sp4_training_data$Samples == "PRISM|7909" |sp4_training_data$Samples == "PRISM|7910" |sp4_training_data$Samples == "PRISM|7911" |sp4_training_data$Samples == "PRISM|7912" |sp4_training_data$Samples == "PRISM|7938" |sp4_training_data$Samples == "PRISM|7941" |sp4_training_data$Samples == "PRISM|7947"| sp4_training_data$Samples == "PRISM|7948" |sp4_training_data$Samples == "PRISM|7955" |sp4_training_data$Samples == "PRISM|7971" |sp4_training_data$Samples == "PRISM|7989" |sp4_training_data$Samples == "PRISM|8095" |sp4_training_data$Samples == "PRISM|8226" |sp4_training_data$Samples == "PRISM|8244" |sp4_training_data$Samples == "PRISM|8264" |sp4_training_data$Samples == "PRISM|8283" |sp4_training_data$Samples == "PRISM|8332" |sp4_training_data$Samples == "PRISM|8336" |sp4_training_data$Samples == "PRISM|8361" |sp4_training_data$Samples == "PRISM|8374"| sp4_training_data$Samples == "PRISM|8377" |sp4_training_data$Samples == "PRISM|8406" |sp4_training_data$Samples == "PRISM|8452" |sp4_training_data$Samples == "PRISM|8462" |sp4_training_data$Samples == "PRISM|8466" |sp4_training_data$Samples == "PRISM|8467" |sp4_training_data$Samples == "PRISM|8475" |sp4_training_data$Samples == "PRISM|8483" |sp4_training_data$Samples == "PRISM|8485" |sp4_training_data$Samples == "PRISM|8496" |sp4_training_data$Samples == "PRISM|8523" |sp4_training_data$Samples == "PRISM|8534" |sp4_training_data$Samples == "PRISM|8537" |sp4_training_data$Samples == "PRISM|8550" |sp4_training_data$Samples == "PRISM|8564" |sp4_training_data$Samples == "PRISM|8565" |sp4_training_data$Samples == "PRISM|8573" |sp4_training_data$Samples == "PRISM|8577" |sp4_training_data$Samples == "PRISM|8589" |sp4_training_data$Samples == "PRISM|8591" |sp4_training_data$Samples == "PRISM|8592" |sp4_training_data$Samples == "PRISM|8624" )
+sp4_training_data_CD1
+```
+```{r}
+sp4_training_data_CD2 <- sp4_training_data %>% filter(sp4_training_data$Samples == "PRISM|8629" |sp4_training_data$Samples == "PRISM|8675" |sp4_training_data$Samples == "PRISM|8683" |sp4_training_data$Samples == "PRISM|8746" |sp4_training_data$Samples == "PRISM|8749" | sp4_training_data$Samples == "PRISM|8753" |sp4_training_data$Samples == "PRISM|8754" |sp4_training_data$Samples == "PRISM|8758" |sp4_training_data$Samples == "PRISM|8764" |sp4_training_data$Samples == "PRISM|8765"| sp4_training_data$Samples == "PRISM|8774" |sp4_training_data$Samples == "PRISM|8776" |sp4_training_data$Samples == "PRISM|8783" |sp4_training_data$Samples == "PRISM|8784" |sp4_training_data$Samples == "PRISM|8788" |sp4_training_data$Samples == "PRISM|8789" |sp4_training_data$Samples == "PRISM|8794" |sp4_training_data$Samples == "PRISM|8800" |sp4_training_data$Samples == "PRISM|8802" |sp4_training_data$Samples == "PRISM|8806" |sp4_training_data$Samples == "PRISM|8807" |sp4_training_data$Samples == "PRISM|8841" |sp4_training_data$Samples == "PRISM|8843" |sp4_training_data$Samples == "PRISM|8847" |sp4_training_data$Samples == "PRISM|8878" |sp4_training_data$Samples == "PRISM|8892"| sp4_training_data$Samples == "PRISM|9126" |sp4_training_data$Samples == "PRISM|9148")
+sp4_training_data_CD2
+```
+
+```{r}
+sp4_training_data_CD <- rbind (sp4_training_data_CD1, sp4_training_data_CD2)
+sp4_training_data_CD
+```
+
+```{r}
+X_train_microbiota <- subset (sp4_training_data_CD, select = -c(Samples))
+X_train_microbiota 
+```
+
+```{r}
+X_CD_microbiota_train_not_log <- X_train_microbiota
+write.xlsx(X_CD_microbiota_train_not_log, file = "X_CD_microbiota_train_not_log.xlsx")
+```
+
+```{r}
+X_train_microbiota <- log (X_train_microbiota+1)
+X_train_microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train_microbiota, file = "X_CD_microbiota_train.xlsx")
+```
+
+```{r}
+sp4_edited
+```
+
+```{r}
+sp4_validation_data <- sp4[156:221, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+sp4_validation_data
+```
+
+```{r}
+CD_metabolite_validation_list_microbiota <- sp4_validation_data [0]
+CD_metabolite_validation_list_microbiota
+```
+
+```{r}
+sp4_validation_CD_microbiota <- sp4_edited %>% filter (sp4_edited$Samples == "Validation|LLDeep_0001"|sp4_edited$Samples == "Validation|LLDeep_0003"|sp4_edited$Samples == "Validation|LLDeep_0010" | sp4_edited$Samples == "Validation|LLDeep_0011"|sp4_edited$Samples == "Validation|LLDeep_0012"|sp4_edited$Samples == "Validation|LLDeep_0015" |sp4_edited$Samples == "Validation|LLDeep_0018" |sp4_edited$Samples == "Validation|LLDeep_0021" |sp4_edited$Samples == "Validation|LLDeep_0022" |sp4_edited$Samples == "Validation|LLDeep_0024" |sp4_edited$Samples == "Validation|LLDeep_0026" |sp4_edited$Samples == "Validation|LLDeep_0027" |sp4_edited$Samples == "Validation|LLDeep_0028" |sp4_edited$Samples == "Validation|LLDeep_0029" |sp4_edited$Samples == "Validation|LLDeep_0030" |sp4_edited$Samples == "Validation|LLDeep_0033" |sp4_edited$Samples == "Validation|LLDeep_0034" |sp4_edited$Samples == "Validation|LLDeep_0037" |sp4_edited$Samples == "Validation|LLDeep_0039" |sp4_edited$Samples == "Validation|LLDeep_0043" |sp4_edited$Samples == "Validation|LLDeep_0047" |sp4_edited$Samples == "Validation|LLDeep_0052" |sp4_edited$Samples == "Validation|UMCGIBD00072" |sp4_edited$Samples == "Validation|UMCGIBD00030"|sp4_edited$Samples == "Validation|UMCGIBD00032"| sp4_edited$Samples == "Validation|UMCGIBD00145" |sp4_edited$Samples == "Validation|UMCGIBD00485"|sp4_edited$Samples == "Validation|UMCGIBD00041"|sp4_edited$Samples == "Validation|UMCGIBD00126" |sp4_edited$Samples == "Validation|UMCGIBD00082"|sp4_edited$Samples == "Validation|UMCGIBD00442"|sp4_edited$Samples == "Validation|UMCGIBD00077" |sp4_edited$Samples == "Validation|UMCGIBD00141"|sp4_edited$Samples == "Validation|UMCGIBD00112" |sp4_edited$Samples == "Validation|UMCGIBD00508" |sp4_edited$Samples == "Validation|UMCGIBD00106"|sp4_edited$Samples == "Validation|UMCGIBD00458" |sp4_edited$Samples == "Validation|UMCGIBD00254" |sp4_edited$Samples == "Validation|UMCGIBD00233"|sp4_edited$Samples == "Validation|UMCGIBD00238" |sp4_edited$Samples == "Validation|UMCGIBD00027" |sp4_edited$Samples == "Validation|UMCGIBD00064")
+sp4_validation_CD_microbiota
+```
+
+```{r}
+X_CD_microbiota_validation <- subset (sp4_validation_CD_microbiota, select = -c(Samples))
+X_CD_microbiota_validation
+```
+
+```{r}
+X_CD_microbiota_validation <- log (X_CD_microbiota_validation+1)
+X_CD_microbiota_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_CD_microbiota_validation, file = "X_CD_microbiota_validation.xlsx")
+```
+
+# Ulcerative Colitis
+
+```{r}
+sp4$Diagnosis
+```
+
+```{r}
+test <- sp4[1:155, ]
+test
+```
+
+```{r}
+Y.diagnosis_UC.microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_UC.microbiota$Diagnosis
+```
+```{r}
+Y.diagnosis_UC.microbiota <-as.factor (Y.diagnosis_UC.microbiota$Diagnosis)
+```
+```{r}
+Y.diagnosis_UC.microbiota
+```
+
+```{r}
+Y.age_UC.microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_UC.microbiota$Age
+```
+```{r}
+Y.age_UC.microbiota <-as.factor (Y.age_UC.microbiota$Age)
+```
+```{r}
+Y.age_UC.microbiota
+```
+
+```{r}
+Y.Fecal.Calprotectin_UC.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_UC.microbiota$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_UC.microbiota <-as.factor (Y.Fecal.Calprotectin_UC.microbiota$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_UC.microbiota
+```
+
+```{r}
+Y.antibiotic_UC.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_UC.microbiota$antibiotic
+```
+```{r}
+Y.antibiotic_UC.microbiota <-as.factor (Y.antibiotic_UC.microbiota$antibiotic)
+```
+```{r}
+Y.antibiotic_UC.microbiota
+```
+
+```{r}
+Y.immunosuppressant_UC.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_UC.microbiota <- as.factor(Y.immunosuppressant_UC.microbiota$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_UC.microbiota
+```
+
+```{r}
+Y.steroids_UC.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_UC.microbiota$steroids
+```
+```{r}
+Y.steroids_UC.microbiota <-as.factor (Y.steroids_UC.microbiota$steroids)
+```
+```{r}
+Y.steroids_UC.microbiota
+```
+
+```{r}
+Y.mesalamine_UC.microbiota <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_UC.microbiota$mesalamine
+```
+```{r}
+Y.mesalamine_UC.microbiota <-as.factor (Y.mesalamine_UC.microbiota$mesalamine)
+```
+```{r}
+Y.mesalamine_UC.microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_UC.microbiota, file = "Y_UC_diagnosis_train_microbiota.xlsx")
+write.xlsx(Y.age_UC.microbiota, file = "Y_UC_age_train_microbiota.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_UC.microbiota, file = "Y_UC_Fecal.Calprotectin_train_microbiota.xlsx")
+write.xlsx(Y.mesalamine_UC.microbiota, file = "Y_UC_mesalamine_train_microbiota.xlsx")
+write.xlsx(Y.steroids_UC.microbiota, file = "Y_UC_steroids_train_microbiota.xlsx")
+write.xlsx(Y.antibiotic_UC.microbiota, file = "Y_UC_antibiotics_train_microbiota.xlsx")
+write.xlsx(Y.immunosuppressant_UC.microbiota, file = "Y_UC_immunosuppressants_train_microbiota.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation_UC.microbiota <- sp4[156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_validation_UC.microbiota$Diagnosis
+```
+```{r}
+Y.diagnosis_validation_UC.microbiota  <-as.factor (Y.diagnosis_validation_UC.microbiota$Diagnosis)
+```
+```{r}
+Y.diagnosis_validation_UC.microbiota
+```
+
+```{r}
+Y.age_validation_UC.microbiota <- sp4 %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_validation_UC.microbiota$Age
+```
+```{r}
+Y.age_validation_UC.microbiota <-as.factor (Y.age_validation_UC.microbiota$Age)
+```
+```{r}
+Y.age_validation_UC.microbiota
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation_UC.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation_UC.microbiota$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC.microbiota <-as.factor (Y.Fecal.Calprotectin_validation_UC.microbiota$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC.microbiota
+```
+
+```{r}
+Y.antibiotic_validation_UC.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_validation_UC.microbiota$antibiotic
+```
+```{r}
+Y.antibiotic_validation_UC.microbiota <-as.factor (Y.antibiotic_validation_UC.microbiota$antibiotic)
+```
+```{r}
+Y.antibiotic_validation_UC.microbiota
+```
+
+```{r}
+Y.immunosuppressant_validation_UC.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_validation_UC.microbiota <- as.factor(Y.immunosuppressant_validation_UC.microbiota$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation_UC.microbiota
+```
+
+```{r}
+Y.steroids_validation_UC.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_validation_UC.microbiota$steroids
+```
+```{r}
+Y.steroids_validation_UC.microbiota <-as.factor (Y.steroids_validation_UC.microbiota$steroids)
+```
+```{r}
+Y.steroids_validation_UC.microbiota
+```
+
+```{r}
+Y.mesalamine_validation_UC.microbiota <- sp4 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_validation_UC.microbiota$mesalamine
+```
+```{r}
+Y.mesalamine_validation_UC.microbiota <-as.factor (Y.mesalamine_validation_UC.microbiota$mesalamine)
+```
+```{r}
+Y.mesalamine_validation_UC.microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation_UC.microbiota, file = "Y_UC_diagnosis_validation_microbiota.xlsx")
+write.xlsx(Y.age_validation_UC.microbiota, file = "Y_UC_age_validation_microbiota.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation_UC.microbiota, file = "Y_UC_Fecal.Calprotectin_validation_microbiota.xlsx")
+write.xlsx(Y.mesalamine_validation_UC.microbiota, file = "Y_UC_mesalamine_validation_microbiota.xlsx")
+write.xlsx(Y.steroids_validation_UC.microbiota, file = "Y_UC_steroids_validation_microbiota.xlsx")
+write.xlsx(Y.antibiotic_validation_UC.microbiota, file = "Y_UC_antibiotics_validation_microbiota.xlsx")
+write.xlsx(Y.immunosuppressant_validation_UC.microbiota, file = "Y_UC_immunosuppressants_validation_microbiota.xlsx")
+```
+
+```{r}
+sp4_edited
+```
+```{r}
+sp4_training_data_UC <- sp4_edited %>% filter (str_detect (Samples,"PRISM"))
+sp4_training_data_UC 
+```
+
+```{r}
+UC_train.microbiota <- sp4[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+UC_train_list.microbiota <- UC_train.microbiota [0]
+UC_train_list.microbiota
+```
+
+```{r}
+sp4_training_data_UC <- sp4_training_data_UC %>% filter (sp4_training_data_UC$Samples == "PRISM|7496" |sp4_training_data_UC$Samples == "PRISM|7506"|sp4_training_data_UC$Samples == "PRISM|7662" | sp4_training_data_UC$Samples == "PRISM|7762" |sp4_training_data_UC$Samples == "PRISM|7776"|sp4_training_data_UC$Samples == "PRISM|7847" |sp4_training_data_UC$Samples == "PRISM|7852" |sp4_training_data_UC$Samples == "PRISM|7855" |sp4_training_data_UC$Samples == "PRISM|7858" |sp4_training_data_UC$Samples == "PRISM|7860" |sp4_training_data_UC$Samples == "PRISM|7861" |sp4_training_data_UC$Samples == "PRISM|7862" |sp4_training_data_UC$Samples == "PRISM|7870" |sp4_training_data_UC$Samples == "PRISM|7874"|sp4_training_data_UC$Samples == "PRISM|7879" | sp4_training_data_UC$Samples == "PRISM|7897" |sp4_training_data_UC$Samples == "PRISM|7899" |sp4_training_data_UC$Samples == "PRISM|7904" |sp4_training_data_UC$Samples == "PRISM|7906" |sp4_training_data_UC$Samples == "PRISM|7908" |sp4_training_data_UC$Samples == "PRISM|7909" |sp4_training_data_UC$Samples == "PRISM|7910" |sp4_training_data_UC$Samples == "PRISM|7911"|sp4_training_data_UC$Samples == "PRISM|7912" |sp4_training_data_UC$Samples == "PRISM|7955"|sp4_training_data_UC$Samples == "PRISM|8096" | sp4_training_data_UC$Samples == "PRISM|8101" |sp4_training_data_UC$Samples == "PRISM|8106" |sp4_training_data_UC$Samples == "PRISM|8129" |sp4_training_data_UC$Samples == "PRISM|8244" |sp4_training_data_UC$Samples == "PRISM|8275" |sp4_training_data_UC$Samples == "PRISM|8283" |sp4_training_data_UC$Samples == "PRISM|8332" |sp4_training_data_UC$Samples == "PRISM|8441" |sp4_training_data_UC$Samples == "PRISM|8444"|sp4_training_data_UC$Samples == "PRISM|8447" |sp4_training_data_UC$Samples =="PRISM|8458"|sp4_training_data_UC$Samples == "PRISM|8464" | sp4_training_data_UC$Samples == "PRISM|8480" |sp4_training_data_UC$Samples == "PRISM|8502" |sp4_training_data_UC$Samples == "PRISM|8503" |sp4_training_data_UC$Samples == "PRISM|8511" |sp4_training_data_UC$Samples == "PRISM|8513" |sp4_training_data_UC$Samples == "PRISM|8515" |sp4_training_data_UC$Samples == "PRISM|8589" |sp4_training_data_UC$Samples == "PRISM|8605"|sp4_training_data_UC$Samples == "PRISM|8628" |sp4_training_data_UC$Samples == "PRISM|8667"|sp4_training_data_UC$Samples == "PRISM|8683" | sp4_training_data_UC$Samples == "PRISM|8692" |sp4_training_data_UC$Samples == "PRISM|8696" |sp4_training_data_UC$Samples == "PRISM|8728" |sp4_training_data_UC$Samples == "PRISM|8734" |sp4_training_data_UC$Samples == "PRISM|8735" |sp4_training_data_UC$Samples == "PRISM|8754" |sp4_training_data_UC$Samples == "PRISM|8764" |sp4_training_data_UC$Samples == "PRISM|8765"|sp4_training_data_UC$Samples == "PRISM|8774" |sp4_training_data_UC$Samples == "PRISM|8776"|sp4_training_data_UC$Samples == "PRISM|8778" | sp4_training_data_UC$Samples == "PRISM|8784" |sp4_training_data_UC$Samples == "PRISM|8785" |sp4_training_data_UC$Samples == "PRISM|8788" |sp4_training_data_UC$Samples == "PRISM|8789" |sp4_training_data_UC$Samples == "PRISM|8795" |sp4_training_data_UC$Samples == "PRISM|8803" |sp4_training_data_UC$Samples == "PRISM|8805" |sp4_training_data_UC$Samples == "PRISM|8809"|sp4_training_data_UC$Samples == "PRISM|8815" |sp4_training_data_UC$Samples == "PRISM|8844"|sp4_training_data_UC$Samples == "PRISM|8846" | sp4_training_data_UC$Samples == "PRISM|8849" |sp4_training_data_UC$Samples == "PRISM|8882" |sp4_training_data_UC$Samples == "PRISM|8894" |sp4_training_data_UC$Samples == "PRISM|8898" |sp4_training_data_UC$Samples == "PRISM|8924" |sp4_training_data_UC$Samples == "PRISM|8932" |sp4_training_data_UC$Samples == "PRISM|8982" |sp4_training_data_UC$Samples == "PRISM|8998"|sp4_training_data_UC$Samples == "PRISM|9010" |sp4_training_data_UC$Samples == "PRISM|9018"|sp4_training_data_UC$Samples == "PRISM|9030" | sp4_training_data_UC$Samples == "PRISM|9033" |sp4_training_data_UC$Samples == "PRISM|9074" |sp4_training_data_UC$Samples == "PRISM|9079" |sp4_training_data_UC$Samples == "PRISM|9126" |sp4_training_data_UC$Samples == "PRISM|9148")
+sp4_training_data_UC
+```
+
+```{r}
+X_train_UC.microbiota <- subset (sp4_training_data_UC, select = -c(Samples))
+X_train_UC.microbiota
+```
+
+```{r}
+X_UC_microbiota_train_not_log <- X_train_UC.microbiota
+write.xlsx(X_UC_microbiota_train_not_log, file = "X_UC_microbiota_train_not_log.xlsx")
+```
+
+```{r}
+X_train_UC.microbiota <- log (X_train_UC.microbiota + 1)
+X_train_UC.microbiota
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train_UC.microbiota, file = "X_UC_microbiota_train.xlsx")
+```
+
+```{r}
+sp4_edited
+```
+
+```{r}
+sp4_validation_data_UC <- sp4[156:221, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+sp4_validation_data_UC
+```
+
+```{r}
+UC_microbiota_validation_list <- sp4_validation_data_UC [0]
+UC_microbiota_validation_list
+```
+
+```{r}
+sp4_validation_UC.microbiota <- sp4_edited %>% filter (sp4_edited$Samples == "Validation|LLDeep_0001"|sp4_edited$Samples == "Validation|LLDeep_0003"|sp4_edited$Samples == "Validation|LLDeep_0010" | sp4_edited$Samples == "Validation|LLDeep_0011"|sp4_edited$Samples == "Validation|LLDeep_0012"|sp4_edited$Samples == "Validation|LLDeep_0015" |sp4_edited$Samples == "Validation|LLDeep_0018" |sp4_edited$Samples == "Validation|LLDeep_0021" |sp4_edited$Samples == "Validation|LLDeep_0022" |sp4_edited$Samples == "Validation|LLDeep_0024" |sp4_edited$Samples == "Validation|LLDeep_0026" |sp4_edited$Samples == "Validation|LLDeep_0027" |sp4_edited$Samples == "Validation|LLDeep_0028" |sp4_edited$Samples == "Validation|LLDeep_0029" |sp4_edited$Samples == "Validation|LLDeep_0030" |sp4_edited$Samples == "Validation|LLDeep_0033" |sp4_edited$Samples == "Validation|LLDeep_0034" |sp4_edited$Samples == "Validation|LLDeep_0037" |sp4_edited$Samples == "Validation|LLDeep_0039" |sp4_edited$Samples == "Validation|LLDeep_0043" |sp4_edited$Samples == "Validation|LLDeep_0047" |sp4_edited$Samples == "Validation|LLDeep_0052" |sp4_edited$Samples == "Validation|UMCGIBD00122" |sp4_edited$Samples == "Validation|UMCGIBD00167"|sp4_edited$Samples == "Validation|UMCGIBD00208"| sp4_edited$Samples == "Validation|UMCGIBD00529" |sp4_edited$Samples == "Validation|UMCGIBD00371"|sp4_edited$Samples == "Validation|UMCGIBD00613"|sp4_edited$Samples == "Validation|UMCGIBD00004" |sp4_edited$Samples == "Validation|UMCGIBD00053"|sp4_edited$Samples == "Validation|UMCGIBD00269"|sp4_edited$Samples == "Validation|UMCGIBD00250" |sp4_edited$Samples == "Validation|UMCGIBD00327"|sp4_edited$Samples == "Validation|UMCGIBD00249" |sp4_edited$Samples == "Validation|UMCGIBD00461" |sp4_edited$Samples == "Validation|UMCGIBD00266"|sp4_edited$Samples == "Validation|UMCGIBD00347" |sp4_edited$Samples == "Validation|UMCGIBD00645" |sp4_edited$Samples == "Validation|UMCGIBD00361"|sp4_edited$Samples == "Validation|UMCGIBD00412" |sp4_edited$Samples == "Validation|UMCGIBD00539" |sp4_edited$Samples == "Validation|UMCGIBD00389"|sp4_edited$Samples == "Validation|UMCGIBD00588" |sp4_edited$Samples == "Validation|UMCGIBD00393"|sp4_edited$Samples == "Validation|UMCGIBD00593")
+sp4_validation_UC.microbiota
+```
+
+```{r}
+X_UC_microbiota_validation <- subset (sp4_validation_UC.microbiota , select = -c(Samples))
+X_UC_microbiota_validation 
+```
+
+```{r}
+X_UC_microbiota_validation <- log (X_UC_microbiota_validation+1)
+X_UC_microbiota_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx (X_UC_microbiota_validation, file = "X_UC_microbiota_validation.xlsx")
+```
+
+# ENZYMES
+
+## Data wrangling Dependent Variable (Y)
+
+Suplemental Material 1 Metabolite feature metadata (209 rows x 221 columns)
+```{r}
+data_file <- "~/Desktop/IBD_article/Supplementary Dataset 6- Per-subject microbial enzyme relative abundance profiles.xlsx"
+if(file.exists(data_file)){
+    Sp6_Per_subject_enzyme_relative_abundance_profiles <- read_excel(path = data_file)
+} else {
+  print("Supplementary Dataset 6: Per-subject microbial enzyme relative abundance profiles.  Check the location of the file relative to your Rmd file.")
+}
+```
+
+Supplementary Dataset 6-Per-subject microbial enzyme species relative abundance profiles.xlsx
+```{r}
+Sp6_Per_subject_enzyme_relative_abundance_profiles
+```
+
+```{r}
+sp6 <- as.data.frame (t(Sp6_Per_subject_enzyme_relative_abundance_profiles))
+sp6
+names (sp6) <- sp6%>% slice (1) %>% unlist ()
+sp6<- sp6 %>% slice (-1)
+sp6
+```
+```{r}
+sp6$Diagnosis
+```
+
+```{r}
+test <- sp6[1:155, ]
+test$Diagnosis
+```
+
+```{r}
+Y.diagnosis.enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis.enzymes$Diagnosis
+```
+
+```{r}
+Y.diagnosis.enzymes %>% select (Diagnosis)
+```
+
+```{r}
+Y.diagnosis.enzymes <-as.factor (Y.diagnosis.enzymes$Diagnosis)
+```
+```{r}
+Y.diagnosis.enzymes
+```
+
+```{r}
+Y.age.enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age.enzymes$Age
+```
+```{r}
+Y.age.enzymes <-as.factor (Y.age.enzymes$Age)
+```
+```{r}
+Y.age.enzymes
+```
+
+```{r}
+Y.Fecal.Calprotectin.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin.enzymes$Fecal.Calprotectin
+```
+```{r}
+Y.Fecal.Calprotectin.enzymes <-as.factor (Y.Fecal.Calprotectin.enzymes$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin.enzymes
+```
+
+```{r}
+Y.antibiotic.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic.enzymes$antibiotic
+```
+```{r}
+Y.antibiotic.enzymes <-as.factor (Y.antibiotic.enzymes$antibiotic)
+```
+```{r}
+Y.antibiotic.enzymes
+```
+
+```{r}
+Y.immunosuppressant.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant.enzymes <- as.factor(Y.immunosuppressant.enzymes$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant.enzymes
+```
+
+```{r}
+Y.steroids.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids.enzymes$steroids
+```
+```{r}
+Y.steroids.enzymes <-as.factor (Y.steroids.enzymes$steroids)
+```
+```{r}
+Y.steroids.enzymes
+```
+
+```{r}
+Y.mesalamine.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine.enzymes$mesalamine
+```
+```{r}
+Y.mesalamine.enzymes <-as.factor (Y.mesalamine.enzymes$mesalamine)
+```
+```{r}
+Y.mesalamine.enzymes
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis.enzymes, file = "Y_CD_diagnosis_train_enzymes.xlsx")
+write.xlsx(Y.age.enzymes, file = "Y_CD_age_train_enzymes.xlsx")
+write.xlsx(Y.Fecal.Calprotectin.enzymes, file = "Y_CD_Fecal.Calprotectin_train_enzymes.xlsx")
+write.xlsx(Y.mesalamine.enzymes, file = "Y_CD_mesalamine_train_enzymes.xlsx")
+write.xlsx(Y.steroids.enzymes, file = "Y_CD_steroids_train_enzymes.xlsx")
+write.xlsx(Y.antibiotic.enzymes, file = "Y_CD_antibiotics_train_enzymes.xlsx")
+write.xlsx(Y.immunosuppressant.enzymes, file = "Y_CD_immunosuppressants_train_enzymes.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation.enzymes <- sp6[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.diagnosis_validation.enzymes$Diagnosis
+```
+```{r}
+Y.diagnosis_validation.enzymes  <-as.factor (Y.diagnosis_validation.enzymes$Diagnosis)
+```
+```{r}
+Y.diagnosis_validation.enzymes 
+```
+
+```{r}
+Y.age_validation.enzymes  <- sp6[156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.age_validation.enzymes$Age
+```
+```{r}
+Y.age_validation.enzymes  <-as.factor (Y.age_validation.enzymes$Age)
+```
+```{r}
+Y.age_validation.enzymes
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation.enzymes$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation.enzymes <-as.factor (Y.Fecal.Calprotectin_validation.enzymes$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation.enzymes
+```
+
+```{r}
+Y.antibiotic_validation.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.antibiotic_validation.enzymes$antibiotic
+```
+```{r}
+Y.antibiotic_validation.enzymes <-as.factor (Y.antibiotic_validation.enzymes$antibiotic)
+```
+```{r}
+Y.antibiotic_validation.enzymes
+```
+
+```{r}
+Y.immunosuppressant_validation.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.immunosuppressant_validation.enzymes <- as.factor(Y.immunosuppressant_validation.enzymes$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation.enzymes
+```
+
+```{r}
+Y.steroids_validation.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.steroids_validation.enzymes$steroids
+```
+```{r}
+Y.steroids_validation.enzymes <-as.factor (Y.steroids_validation.enzymes$steroids)
+```
+```{r}
+Y.steroids_validation.enzymes
+```
+
+```{r}
+Y.mesalamine_validation.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+Y.mesalamine_validation.enzymes$mesalamine
+```
+```{r}
+Y.mesalamine_validation.enzymes <-as.factor (Y.mesalamine_validation.enzymes$mesalamine)
+```
+```{r}
+Y.mesalamine_validation.enzymes 
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation.enzymes, file = "Y_CD_diagnosis_validation_enzymes.xlsx")
+write.xlsx(Y.age_validation.enzymes, file = "Y_CD_age_validation_enzymes.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation.enzymes, file = "Y_CD_Fecal.Calprotectin_validation_enzymes.xlsx")
+write.xlsx(Y.mesalamine_validation.enzymes, file = "Y_CD_mesalamine_validation_enzymes.xlsx")
+write.xlsx(Y.steroids_validation.enzymes, file = "Y_CD_steroids_validation_enzymes.xlsx")
+write.xlsx(Y.antibiotic_validation.enzymes, file = "Y_CD_antibiotics_validation_enzymes.xlsx")
+write.xlsx(Y.immunosuppressant_validation.enzymes, file = "Y_CD_immunosuppressants_validation_enzymes.xlsx")
+```
+
+## Data wrangling Independent Variable (X)
+
+```{r}
+sp6
+```
+
+```{r}
+sp6_filtered <- subset (sp6, select = -c(SRA_metagenome_name, Age, Diagnosis, antibiotic, Fecal.Calprotectin, immunosuppressant, mesalamine, steroids))
+sp6_filtered
+```
+
+```{r}
+sp6_filtered [] <- lapply(sp6_filtered, as.numeric)
+sp6_filtered 
+```
+```{r}
+Sp6_Per_subject_enzyme_relative_abundance_profiles
+```
+
+```{r}
+column.names.enzymes <- colnames (Sp6_Per_subject_enzyme_relative_abundance_profiles)
+column.names.enzymes <- as_vector (column.names.enzymes) 
+column.names.enzymes <- column.names.enzymes[(-1)]
+sp6_filtered <- sp6_filtered %>% mutate (Samples = column.names.enzymes, .before = "1.1.1.1: Alcohol dehydrogenase")
+sp6_filtered
+```
+
+```{r}
+write.xlsx(sp6_filtered , file = "sp6_edited_Xavier.xlsx")
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sp6_edited_Xavier.xlsx"
+if(file.exists(data_file)){
+    sp6_edited <- read_excel(path = data_file)
+} else {
+  print("sp6_edited_Xavier.  Check the location of the file relative to your Rmd file.")
+}
+sp6_edited
+```
+```{r}
+sp6_training_data <- sp6_edited %>% filter (str_detect (Samples,"PRISM"))
+sp6_training_data 
+```
+
+```{r}
+CD_train_enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+CD_train_list_enzymes <- CD_train_enzymes [0]
+CD_train_list_enzymes
+```
+
+```{r}
+sp6_training_data_CD1 <- sp6_training_data %>% filter (sp6_training_data$Samples == "PRISM|7122" |sp6_training_data$Samples == "PRISM|7147"|sp6_training_data$Samples == "PRISM|7150" | sp6_training_data$Samples == "PRISM|7153" |sp6_training_data$Samples == "PRISM|7184" |sp6_training_data$Samples == "PRISM|7238" |sp6_training_data$Samples == "PRISM|7406" |sp6_training_data$Samples == "PRISM|7408" |sp6_training_data$Samples == "PRISM|7421" |sp6_training_data$Samples == "PRISM|7445" |sp6_training_data$Samples == "PRISM|7486" |sp6_training_data$Samples == "PRISM|7547" |sp6_training_data$Samples == "PRISM|7658" |sp6_training_data$Samples == "PRISM|7662" |sp6_training_data$Samples == "PRISM|7744" |sp6_training_data$Samples == "PRISM|7759" |sp6_training_data$Samples == "PRISM|7791" |sp6_training_data$Samples == "PRISM|7843" |sp6_training_data$Samples == "PRISM|7847" |sp6_training_data$Samples == "PRISM|7855" |sp6_training_data$Samples == "PRISM|7858" |sp6_training_data$Samples == "PRISM|7860" |sp6_training_data$Samples == "PRISM|7861" |sp6_training_data$Samples == "PRISM|7862" |sp6_training_data$Samples == "PRISM|7870" |sp6_training_data$Samples == "PRISM|7874" |sp6_training_data$Samples == "PRISM|7875" |sp6_training_data$Samples == "PRISM|7875" |sp6_training_data$Samples == "PRISM|7879" |sp6_training_data$Samples == "PRISM|7899" |sp6_training_data$Samples == "PRISM|7904" |sp6_training_data$Samples == "PRISM|7906" |sp6_training_data$Samples == "PRISM|7908" |sp6_training_data$Samples == "PRISM|7909" |sp6_training_data$Samples == "PRISM|7910" |sp6_training_data$Samples == "PRISM|7911" |sp6_training_data$Samples == "PRISM|7912" |sp6_training_data$Samples == "PRISM|7938" |sp6_training_data$Samples == "PRISM|7941" |sp6_training_data$Samples == "PRISM|7947"| sp6_training_data$Samples == "PRISM|7948" |sp6_training_data$Samples == "PRISM|7955" |sp6_training_data$Samples == "PRISM|7971" |sp6_training_data$Samples == "PRISM|7989" |sp6_training_data$Samples == "PRISM|8095" |sp6_training_data$Samples == "PRISM|8226" |sp6_training_data$Samples == "PRISM|8244" |sp6_training_data$Samples == "PRISM|8264" |sp6_training_data$Samples == "PRISM|8283" |sp6_training_data$Samples == "PRISM|8332" |sp6_training_data$Samples == "PRISM|8336" |sp6_training_data$Samples == "PRISM|8361" |sp6_training_data$Samples == "PRISM|8374"| sp6_training_data$Samples == "PRISM|8377" |sp6_training_data$Samples == "PRISM|8406" |sp6_training_data$Samples == "PRISM|8452" |sp6_training_data$Samples == "PRISM|8462" |sp6_training_data$Samples == "PRISM|8466" |sp6_training_data$Samples == "PRISM|8467" |sp6_training_data$Samples == "PRISM|8475" |sp6_training_data$Samples == "PRISM|8483" |sp6_training_data$Samples == "PRISM|8485" |sp6_training_data$Samples == "PRISM|8496" |sp6_training_data$Samples == "PRISM|8523" |sp6_training_data$Samples == "PRISM|8534" |sp6_training_data$Samples == "PRISM|8537" |sp6_training_data$Samples == "PRISM|8550" |sp6_training_data$Samples == "PRISM|8564" |sp6_training_data$Samples == "PRISM|8565" |sp6_training_data$Samples == "PRISM|8573" |sp6_training_data$Samples == "PRISM|8577" |sp6_training_data$Samples == "PRISM|8589" |sp6_training_data$Samples == "PRISM|8591" |sp6_training_data$Samples == "PRISM|8592" |sp6_training_data$Samples == "PRISM|8624" )
+sp6_training_data_CD1
+```
+```{r}
+sp6_training_data_CD2 <- sp6_training_data %>% filter(sp6_training_data$Samples == "PRISM|8629" |sp6_training_data$Samples == "PRISM|8675" |sp6_training_data$Samples == "PRISM|8683" |sp6_training_data$Samples == "PRISM|8746" |sp6_training_data$Samples == "PRISM|8749" | sp6_training_data$Samples == "PRISM|8753" |sp6_training_data$Samples == "PRISM|8754" |sp6_training_data$Samples == "PRISM|8758" |sp6_training_data$Samples == "PRISM|8764" |sp6_training_data$Samples == "PRISM|8765"| sp6_training_data$Samples == "PRISM|8774" |sp6_training_data$Samples == "PRISM|8776" |sp6_training_data$Samples == "PRISM|8783" |sp6_training_data$Samples == "PRISM|8784" |sp6_training_data$Samples == "PRISM|8788" |sp6_training_data$Samples == "PRISM|8789" |sp6_training_data$Samples == "PRISM|8794" |sp6_training_data$Samples == "PRISM|8800" |sp6_training_data$Samples == "PRISM|8802" |sp6_training_data$Samples == "PRISM|8806" |sp6_training_data$Samples == "PRISM|8807" |sp6_training_data$Samples == "PRISM|8841" |sp6_training_data$Samples == "PRISM|8843" |sp6_training_data$Samples == "PRISM|8847" |sp6_training_data$Samples == "PRISM|8878" |sp6_training_data$Samples == "PRISM|8892"| sp6_training_data$Samples == "PRISM|9126" |sp6_training_data$Samples == "PRISM|9148")
+sp6_training_data_CD2
+```
+
+```{r}
+sp6_training_data_CD <- rbind (sp6_training_data_CD1, sp6_training_data_CD2)
+sp6_training_data_CD
+```
+
+```{r}
+X_train_enzymes <- subset (sp6_training_data_CD, select = -c(Samples))
+X_train_enzymes 
+```
+
+```{r}
+X_train_enzymes <- log (X_train_enzymes+1)
+X_train_enzymes
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train_enzymes, file = "X_CD_enzymes_train.xlsx")
+```
+
+```{r}
+sp6_edited
+```
+
+```{r}
+sp6_validation_data <- sp6[156:221, ] %>% filter (Diagnosis == "CD" | Diagnosis == "Control")
+sp6_validation_data
+```
+
+```{r}
+CD_enzymes_validation_list <- sp6_validation_data [0]
+CD_enzymes_validation_list
+```
+
+```{r}
+sp6_validation_CD_enzymes <- sp6_edited %>% filter (sp6_edited$Samples == "Validation|LLDeep_0001"|sp6_edited$Samples == "Validation|LLDeep_0003"|sp6_edited$Samples == "Validation|LLDeep_0010" | sp6_edited$Samples == "Validation|LLDeep_0011"|sp6_edited$Samples == "Validation|LLDeep_0012"|sp6_edited$Samples == "Validation|LLDeep_0015" |sp6_edited$Samples == "Validation|LLDeep_0018" |sp6_edited$Samples == "Validation|LLDeep_0021" |sp6_edited$Samples == "Validation|LLDeep_0022" |sp6_edited$Samples == "Validation|LLDeep_0024" |sp6_edited$Samples == "Validation|LLDeep_0026" |sp6_edited$Samples == "Validation|LLDeep_0027" |sp6_edited$Samples == "Validation|LLDeep_0028" |sp6_edited$Samples == "Validation|LLDeep_0029" |sp6_edited$Samples == "Validation|LLDeep_0030" |sp6_edited$Samples == "Validation|LLDeep_0033" |sp6_edited$Samples == "Validation|LLDeep_0034" |sp6_edited$Samples == "Validation|LLDeep_0037" |sp6_edited$Samples == "Validation|LLDeep_0039" |sp6_edited$Samples == "Validation|LLDeep_0043" |sp6_edited$Samples == "Validation|LLDeep_0047" |sp6_edited$Samples == "Validation|LLDeep_0052" |sp6_edited$Samples == "Validation|UMCGIBD00072" |sp6_edited$Samples == "Validation|UMCGIBD00030"|sp6_edited$Samples == "Validation|UMCGIBD00032"| sp6_edited$Samples == "Validation|UMCGIBD00145" |sp6_edited$Samples == "Validation|UMCGIBD00485"|sp6_edited$Samples == "Validation|UMCGIBD00041"|sp6_edited$Samples == "Validation|UMCGIBD00126" |sp6_edited$Samples == "Validation|UMCGIBD00082"|sp6_edited$Samples == "Validation|UMCGIBD00442"|sp6_edited$Samples == "Validation|UMCGIBD00077" |sp6_edited$Samples == "Validation|UMCGIBD00141"|sp6_edited$Samples == "Validation|UMCGIBD00112" |sp6_edited$Samples == "Validation|UMCGIBD00508" |sp6_edited$Samples == "Validation|UMCGIBD00106"|sp6_edited$Samples == "Validation|UMCGIBD00458" |sp6_edited$Samples == "Validation|UMCGIBD00254" |sp6_edited$Samples == "Validation|UMCGIBD00233"|sp6_edited$Samples == "Validation|UMCGIBD00238" |sp6_edited$Samples == "Validation|UMCGIBD00027" |sp6_edited$Samples == "Validation|UMCGIBD00064")
+sp6_validation_CD_enzymes
+```
+
+```{r}
+X_CD_enzymes_validation <- subset (sp6_validation_CD_enzymes, select = -c(Samples))
+X_CD_enzymes_validation
+```
+
+```{r}
+X_CD_enzymes_validation <- log (X_CD_enzymes_validation+1)
+X_CD_enzymes_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_CD_enzymes_validation, file = "X_CD_enzymes_validation.xlsx")
+```
+
+# Ulcerative Colitis
+
+```{r}
+sp6$Diagnosis
+```
+
+```{r}
+test <- sp6[1:155, ]
+test
+```
+
+```{r}
+Y.diagnosis_UC.enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_UC.enzymes$Diagnosis
+```
+```{r}
+Y.diagnosis_UC.enzymes <-as.factor (Y.diagnosis_UC.enzymes$Diagnosis)
+```
+```{r}
+Y.diagnosis_UC.enzymes
+```
+
+```{r}
+Y.age_UC.enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_UC.enzymes$Age
+```
+```{r}
+Y.age_UC.enzymes <-as.factor (Y.age_UC.enzymes$Age)
+```
+```{r}
+Y.age_UC.enzymes
+```
+
+```{r}
+Y.Fecal.Calprotectin_UC.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_UC.enzymes$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_UC.enzymes <-as.factor (Y.Fecal.Calprotectin_UC.enzymes$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_UC.enzymes
+```
+
+```{r}
+Y.antibiotic_UC.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_UC.enzymes$antibiotic
+```
+```{r}
+Y.antibiotic_UC.enzymes<-as.factor (Y.antibiotic_UC.enzymes$antibiotic)
+```
+```{r}
+Y.antibiotic_UC.enzymes
+```
+
+```{r}
+Y.immunosuppressant_UC.enzymes <- sp6 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_UC.enzyzmes <- as.factor(Y.immunosuppressant_UC.enzymes$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_UC.enzymes
+```
+
+```{r}
+Y.steroids_UC.enzymes <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_UC.enzymes$steroids
+```
+```{r}
+Y.steroids_UC.enzymes <-as.factor (Y.steroids_UC.enzymes$steroids)
+```
+```{r}
+Y.steroids_UC.enzymes
+```
+
+```{r}
+Y.mesalamine_UC.enzymes <- sp4 [1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_UC.enzymes$mesalamine
+```
+```{r}
+Y.mesalamine_UC.enzymes <-as.factor (Y.mesalamine_UC.enzymes$mesalamine)
+```
+```{r}
+Y.mesalamine_UC.enzymes
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_UC.enzymes, file = "Y_UC_diagnosis_train_enzymes.xlsx")
+write.xlsx(Y.age_UC.enzymes, file = "Y_UC_age_train_enzymes.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_UC.enzymes, file = "Y_UC_Fecal.Calprotectin_train_enzymes.xlsx")
+write.xlsx(Y.mesalamine_UC.enzymes, file = "Y_UC_mesalamine_train_enzymes.xlsx")
+write.xlsx(Y.steroids_UC.enzymes, file = "Y_UC_steroids_train_enzymes.xlsx")
+write.xlsx(Y.antibiotic_UC.enzymes, file = "Y_UC_antibiotics_train_enzymes.xlsx")
+write.xlsx(Y.immunosuppressant_UC.enzymes, file = "Y_UC_immunosuppressants_train_enzymes.xlsx")
+```
+
+#Validation data sets.
+
+```{r}
+Y.diagnosis_validation_UC.enzymes <- sp6[156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.diagnosis_validation_UC.enzymes$Diagnosis
+```
+```{r}
+Y.diagnosis_validation_UC.enzymes  <-as.factor (Y.diagnosis_validation_UC.enzymes$Diagnosis)
+```
+```{r}
+Y.diagnosis_validation_UC.enzymes
+```
+
+```{r}
+Y.age_validation_UC.enzymes <- sp6[156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.age_validation_UC.enzymes$Age
+```
+```{r}
+Y.age_validation_UC.enzymes <-as.factor (Y.age_validation_UC.enzymes$Age)
+```
+```{r}
+Y.age_validation_UC.enzymes
+```
+
+```{r}
+Y.Fecal.Calprotectin_validation_UC.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.Fecal.Calprotectin_validation_UC.enzymes$Fecal.Calprotectin 
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC.enzymes <-as.factor (Y.Fecal.Calprotectin_validation_UC.enzymes$Fecal.Calprotectin )
+```
+```{r}
+Y.Fecal.Calprotectin_validation_UC.enzymes
+```
+
+```{r}
+Y.antibiotic_validation_UC.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.antibiotic_validation_UC.enzymes$antibiotic
+```
+```{r}
+Y.antibiotic_validation_UC.enzymes <-as.factor (Y.antibiotic_validation_UC.enzymes$antibiotic)
+```
+```{r}
+Y.antibiotic_validation_UC.enzymes
+```
+
+```{r}
+Y.immunosuppressant_validation_UC.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.immunosuppressant_validation_UC.enzymes <- as.factor(Y.immunosuppressant_validation_UC.enzymes$immunosuppressant)
+```
+
+```{r}
+Y.immunosuppressant_validation_UC.enzymes
+```
+
+```{r}
+Y.steroids_validation_UC.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.steroids_validation_UC.enzymes$steroids
+```
+```{r}
+Y.steroids_validation_UC.enzymes <-as.factor (Y.steroids_validation_UC.enzymes$steroids)
+```
+```{r}
+Y.steroids_validation_UC.enzymes
+```
+
+```{r}
+Y.mesalamine_validation_UC.enzymes <- sp6 [156:220, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+Y.mesalamine_validation_UC.enzymes$mesalamine
+```
+```{r}
+Y.mesalamine_validation_UC.enzymes <-as.factor (Y.mesalamine_validation_UC.enzymes$mesalamine)
+```
+```{r}
+Y.mesalamine_validation_UC.enzymes
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(Y.diagnosis_validation_UC.enzymes, file = "Y_UC_diagnosis_validation_enzymes.xlsx")
+write.xlsx(Y.age_validation_UC.enzymes, file = "Y_UC_age_validation_enzymes.xlsx")
+write.xlsx(Y.Fecal.Calprotectin_validation_UC.enzymes, file = "Y_UC_Fecal.Calprotectin_validation_enzymes.xlsx")
+write.xlsx(Y.mesalamine_validation_UC.enzymes, file = "Y_UC_mesalamine_validation_enzymes.xlsx")
+write.xlsx(Y.steroids_validation_UC.enzymes, file = "Y_UC_steroids_validation_enzymes.xlsx")
+write.xlsx(Y.antibiotic_validation_UC.enzymes, file = "Y_UC_antibiotics_validation_enzymes.xlsx")
+write.xlsx(Y.immunosuppressant_validation_UC.enzymes, file = "Y_UC_immunosuppressants_validation_enzymes.xlsx")
+```
+
+```{r}
+sp6_edited
+```
+```{r}
+sp6_training_data_UC <- sp6_edited %>% filter (str_detect (Samples,"PRISM"))
+sp6_training_data_UC 
+```
+
+```{r}
+UC_train.enzymes <- sp6[1:155, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+UC_train_list.enzymes <- UC_train.enzymes [0]
+UC_train_list.enzymes
+```
+
+```{r}
+sp6_training_data_UC <- sp6_training_data_UC %>% filter (sp6_training_data_UC$Samples == "PRISM|7496" |sp6_training_data_UC$Samples == "PRISM|7506"|sp6_training_data_UC$Samples == "PRISM|7662" | sp6_training_data_UC$Samples == "PRISM|7762" |sp6_training_data_UC$Samples == "PRISM|7776"|sp6_training_data_UC$Samples == "PRISM|7847" |sp6_training_data_UC$Samples == "PRISM|7852" |sp6_training_data_UC$Samples == "PRISM|7855" |sp6_training_data_UC$Samples == "PRISM|7858" |sp6_training_data_UC$Samples == "PRISM|7860" |sp6_training_data_UC$Samples == "PRISM|7861" |sp6_training_data_UC$Samples == "PRISM|7862" |sp6_training_data_UC$Samples == "PRISM|7870" |sp6_training_data_UC$Samples == "PRISM|7874"|sp6_training_data_UC$Samples == "PRISM|7879" | sp6_training_data_UC$Samples == "PRISM|7897" |sp6_training_data_UC$Samples == "PRISM|7899" |sp6_training_data_UC$Samples == "PRISM|7904" |sp6_training_data_UC$Samples == "PRISM|7906" |sp6_training_data_UC$Samples == "PRISM|7908" |sp6_training_data_UC$Samples == "PRISM|7909" |sp6_training_data_UC$Samples == "PRISM|7910" |sp6_training_data_UC$Samples == "PRISM|7911"|sp6_training_data_UC$Samples == "PRISM|7912" |sp6_training_data_UC$Samples == "PRISM|7955"|sp6_training_data_UC$Samples == "PRISM|8096" | sp6_training_data_UC$Samples == "PRISM|8101" |sp6_training_data_UC$Samples == "PRISM|8106" |sp6_training_data_UC$Samples == "PRISM|8129" |sp6_training_data_UC$Samples == "PRISM|8244" |sp6_training_data_UC$Samples == "PRISM|8275" |sp6_training_data_UC$Samples == "PRISM|8283" |sp6_training_data_UC$Samples == "PRISM|8332" |sp6_training_data_UC$Samples == "PRISM|8441" |sp6_training_data_UC$Samples == "PRISM|8444"|sp6_training_data_UC$Samples == "PRISM|8447" |sp6_training_data_UC$Samples =="PRISM|8458"|sp6_training_data_UC$Samples == "PRISM|8464" | sp6_training_data_UC$Samples == "PRISM|8480" |sp6_training_data_UC$Samples == "PRISM|8502" |sp6_training_data_UC$Samples == "PRISM|8503" |sp6_training_data_UC$Samples == "PRISM|8511" |sp6_training_data_UC$Samples == "PRISM|8513" |sp6_training_data_UC$Samples == "PRISM|8515" |sp6_training_data_UC$Samples == "PRISM|8589" |sp6_training_data_UC$Samples == "PRISM|8605"|sp6_training_data_UC$Samples == "PRISM|8628" |sp6_training_data_UC$Samples == "PRISM|8667"|sp6_training_data_UC$Samples == "PRISM|8683" | sp6_training_data_UC$Samples == "PRISM|8692" |sp6_training_data_UC$Samples == "PRISM|8696" |sp6_training_data_UC$Samples == "PRISM|8728" |sp6_training_data_UC$Samples == "PRISM|8734" |sp6_training_data_UC$Samples == "PRISM|8735" |sp6_training_data_UC$Samples == "PRISM|8754" |sp6_training_data_UC$Samples == "PRISM|8764" |sp6_training_data_UC$Samples == "PRISM|8765"|sp6_training_data_UC$Samples == "PRISM|8774" |sp6_training_data_UC$Samples == "PRISM|8776"|sp6_training_data_UC$Samples == "PRISM|8778" | sp6_training_data_UC$Samples == "PRISM|8784" |sp6_training_data_UC$Samples == "PRISM|8785" |sp6_training_data_UC$Samples == "PRISM|8788" |sp6_training_data_UC$Samples == "PRISM|8789" |sp6_training_data_UC$Samples == "PRISM|8795" |sp6_training_data_UC$Samples == "PRISM|8803" |sp6_training_data_UC$Samples == "PRISM|8805" |sp6_training_data_UC$Samples == "PRISM|8809"|sp6_training_data_UC$Samples == "PRISM|8815" |sp6_training_data_UC$Samples == "PRISM|8844"|sp6_training_data_UC$Samples == "PRISM|8846" | sp6_training_data_UC$Samples == "PRISM|8849" |sp6_training_data_UC$Samples == "PRISM|8882" |sp6_training_data_UC$Samples == "PRISM|8894" |sp6_training_data_UC$Samples == "PRISM|8898" |sp6_training_data_UC$Samples == "PRISM|8924" |sp6_training_data_UC$Samples == "PRISM|8932" |sp6_training_data_UC$Samples == "PRISM|8982" |sp6_training_data_UC$Samples == "PRISM|8998"|sp6_training_data_UC$Samples == "PRISM|9010" |sp6_training_data_UC$Samples == "PRISM|9018"|sp6_training_data_UC$Samples == "PRISM|9030" | sp6_training_data_UC$Samples == "PRISM|9033" |sp6_training_data_UC$Samples == "PRISM|9074" |sp6_training_data_UC$Samples == "PRISM|9079" |sp6_training_data_UC$Samples == "PRISM|9126" |sp6_training_data_UC$Samples == "PRISM|9148")
+sp6_training_data_UC
+```
+
+```{r}
+X_train_UC.enzymes <- subset (sp6_training_data_UC, select = -c(Samples))
+X_train_UC.enzymes
+```
+
+```{r}
+X_train_UC.enzymes <- log (X_train_UC.enzymes+1)
+X_train_UC.enzymes
+```
+
+```{r}
+library (openxlsx)
+write.xlsx(X_train_UC.enzymes, file = "X_UC_enzymes_train.xlsx")
+```
+
+```{r}
+sp6_edited
+```
+
+```{r}
+sp6_validation_data_UC <- sp6[156:221, ] %>% filter (Diagnosis == "UC" | Diagnosis == "Control")
+sp6_validation_data_UC
+```
+
+```{r}
+UC_enzymes_validation_list <- sp6_validation_data_UC [0]
+UC_enzymes_validation_list
+```
+
+```{r}
+sp6_validation_UC.enzymes <- sp6_edited %>% filter (sp6_edited$Samples == "Validation|LLDeep_0001"|sp6_edited$Samples == "Validation|LLDeep_0003"|sp6_edited$Samples == "Validation|LLDeep_0010" | sp6_edited$Samples == "Validation|LLDeep_0011"|sp6_edited$Samples == "Validation|LLDeep_0012"|sp6_edited$Samples == "Validation|LLDeep_0015" |sp6_edited$Samples == "Validation|LLDeep_0018" |sp6_edited$Samples == "Validation|LLDeep_0021" |sp6_edited$Samples == "Validation|LLDeep_0022" |sp6_edited$Samples == "Validation|LLDeep_0024" |sp6_edited$Samples == "Validation|LLDeep_0026" |sp6_edited$Samples == "Validation|LLDeep_0027" |sp6_edited$Samples == "Validation|LLDeep_0028" |sp6_edited$Samples == "Validation|LLDeep_0029" |sp6_edited$Samples == "Validation|LLDeep_0030" |sp6_edited$Samples == "Validation|LLDeep_0033" |sp6_edited$Samples == "Validation|LLDeep_0034" |sp6_edited$Samples == "Validation|LLDeep_0037" |sp6_edited$Samples == "Validation|LLDeep_0039" |sp6_edited$Samples == "Validation|LLDeep_0043" |sp6_edited$Samples == "Validation|LLDeep_0047" |sp6_edited$Samples == "Validation|LLDeep_0052" |sp6_edited$Samples == "Validation|UMCGIBD00122" |sp6_edited$Samples == "Validation|UMCGIBD00167"|sp6_edited$Samples == "Validation|UMCGIBD00208"| sp6_edited$Samples == "Validation|UMCGIBD00529" |sp6_edited$Samples == "Validation|UMCGIBD00371"|sp6_edited$Samples == "Validation|UMCGIBD00613"|sp6_edited$Samples == "Validation|UMCGIBD00004" |sp6_edited$Samples == "Validation|UMCGIBD00053"|sp6_edited$Samples == "Validation|UMCGIBD00269"|sp6_edited$Samples == "Validation|UMCGIBD00250" |sp6_edited$Samples == "Validation|UMCGIBD00327"|sp6_edited$Samples == "Validation|UMCGIBD00249" |sp6_edited$Samples == "Validation|UMCGIBD00461" |sp6_edited$Samples == "Validation|UMCGIBD00266"|sp6_edited$Samples == "Validation|UMCGIBD00347" |sp6_edited$Samples == "Validation|UMCGIBD00645" |sp6_edited$Samples == "Validation|UMCGIBD00361"|sp6_edited$Samples == "Validation|UMCGIBD00412" |sp6_edited$Samples == "Validation|UMCGIBD00539" |sp6_edited$Samples == "Validation|UMCGIBD00389"|sp6_edited$Samples == "Validation|UMCGIBD00588" |sp6_edited$Samples == "Validation|UMCGIBD00393"|sp6_edited$Samples == "Validation|UMCGIBD00593")
+sp6_validation_UC.enzymes
+```
+
+```{r}
+X_UC_enzymes_validation <- subset (sp6_validation_UC.enzymes , select = -c(Samples))
+X_UC_enzymes_validation 
+```
+
+```{r}
+X_UC_enzymes_validation <- log (X_UC_enzymes_validation+1)
+X_UC_enzymes_validation
+```
+
+```{r}
+library (openxlsx)
+write.xlsx (X_UC_enzymes_validation, file = "X_UC_enzymes_validation.xlsx")
+```
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
