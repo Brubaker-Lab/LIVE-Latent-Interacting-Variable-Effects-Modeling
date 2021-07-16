@@ -1,0 +1,850 @@
+---
+title: "BME_Confer_XavierData_June02_MLR"
+author: "Javier Munoz"
+date: "06/02/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+suppressWarnings(library (ggplot2, verbose = FALSE))
+suppressWarnings(library (mixOmics, verbose = FALSE))
+suppressWarnings(library(tidyverse, verbose = FALSE))
+suppressWarnings(library(magrittr, verbose = FALSE))
+suppressWarnings(library (dplyr, verbose = FALSE))
+suppressWarnings(library (alr4,verbose = FALSE))
+suppressWarnings(library (car,verbose = FALSE))
+suppressWarnings(library (readxl, verbose = FALSE))
+suppressWarnings(library (scatterplot3d, verbose = FALSE))
+```
+
+# CROHN DISEASE
+
+## For the linear regression model, dummy components for microbiota and enzyme composition must be excluded in order to remove the scores. It could generate noise in the model. 
+
+```{r}
+data_file <- "~/Desktop/IBD_article/CD_regression_comp.xlsx"
+Xavier_data_MLR_CD <- read_excel(path = data_file, sheet = 1)
+Xavier_data_MLR_CD 
+```
+
+## Main Effects
+
+```{r}
+model_main_effects_CD <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes, Xavier_data_MLR_CD)
+summary (model_main_effects_CD)
+```
+
+## Interaction Effects
+
+```{r}
+model_interaction_effects_CD_metabolites_microbiota <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb,Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota)
+```
+
+```{r}
+model_interaction_effects_CD_metabolites_enzymes <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_enzymes + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_enzymes)
+```
+
+```{r}
+model_interaction_effects_CD_microbiota_enzymes <- lm (Diagnosis_regression ~ q1_microb + q1_enzymes + q1_microb*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_microbiota_enzymes)
+```
+
+```{r}
+model_interaction_effects_CD_metabolites_microbiota_enzymes_two_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes + q1_microb*q1_enzymes,Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota_enzymes_two_factors)
+```
+
+```{r}
+model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes +  q1_microb*q1_enzymes + q1_metab*q1_microb*q1_enzymes + q2_metab*q1_microb*q1_enzymes + q3_metab*q1_microb*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors)
+```
+
+```{r}
+Scatterplot_Interaction_effects <- Xavier_data_MLR_CD %>% select (q1_metab, q1_microb, q1_enzymes, Diagnosis, Diagnosis_regression,q2_metab, q2_microb, q2_enzymes) 
+Scatterplot_Interaction_effects
+```
+
+
+# “Metabolomics LV1", "Microbiota Composition LV1" and "Enzymes LV1"
+
+```{r}
+library (plotly)
+
+Scatterplot_Interaction_effects$Diagnosis_regression[which(Scatterplot_Interaction_effects$Diagnosis_regression == 0)] <- 'Control'
+Scatterplot_Interaction_effects$Diagnosis_regression[which(Scatterplot_Interaction_effects$Diagnosis_regression == 1)] <- 'CD'
+Scatterplot_Interaction_effects$Diagnosis_regression <- as.factor(Scatterplot_Interaction_effects$Diagnosis_regression)
+
+fig <- plot_ly(Scatterplot_Interaction_effects, x = ~q1_metab, y = ~q1_microb, z = ~q1_enzymes, color = ~Diagnosis_regression, colors = c('turquoise3', 'indianred1'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'metabolites LV1'),
+                     yaxis = list(title = 'microbiota LV1'),
+                     zaxis = list(title = 'enzymes LV1')))
+
+fig
+```
+
+# Metabolomics LV1 and Microbiota Composition LV1
+
+```{r}
+ggplot(Scatterplot_Interaction_effects,aes(q1_metab,q1_microb,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV1", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+# Metabolomics LV1 and Enzymes Composition LV1
+
+```{r}
+ggplot(Scatterplot_Interaction_effects,aes(q1_metab,q1_enzymes,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV1", y = "Enzymes Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+
+```{r}
+ggplot(Scatterplot_Interaction_effects,aes(q1_microb,q1_enzymes,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Microbiota Composition LV1", y = "Enzyme Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+# ULCERATIVE COLITTIS
+
+```{r}
+data_file <- "~/Desktop/IBD_article/UC_regression_comp.xlsx"
+Xavier_data_MLR_UC <- read_excel(path = data_file)
+Xavier_data_MLR_UC 
+```
+
+## Main Effects
+
+```{r}
+model_main_effects_UC <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes, Xavier_data_MLR_UC)
+summary (model_main_effects_UC)
+```
+
+## Interaction Effects
+
+```{r}
+model_interaction_effects_UC_metabolites_microbiota <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_metab*q1_microb + q2_metab*q1_microb,Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota)
+```
+
+```{r}
+model_interaction_effects_UC_metabolites_enzymes <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_enzymes + q1_metab*q1_enzymes + q2_metab*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_enzymes)
+```
+
+```{r}
+model_interaction_effects_UC_microbiota_enzymes <- lm (Diagnosis_regression ~ q1_microb + q1_enzymes + q1_microb*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_microbiota_enzymes)
+```
+
+```{r}
+model_interaction_effects_UC_metabolites_microbiota_enzymes_two_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q1_microb*q1_enzymes,Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota_enzymes_two_factors)
+```
+
+```{r}
+model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q1_microb*q1_enzymes + q1_metab*q1_microb*q1_enzymes + q2_metab*q1_microb*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors)
+```
+
+```{r}
+Scatterplot_Interaction_effects.UC <- Xavier_data_MLR_UC %>% select (q2_metab, q1_microb, q1_enzymes, Diagnosis, Diagnosis_regression,q1_metab) 
+Scatterplot_Interaction_effects.UC
+```
+
+# “Metabolomics LV2", "Microbiota Composition LV1" and "Enzymes LV1"
+
+```{r}
+library (plotly)
+
+Scatterplot_Interaction_effects.UC$Diagnosis_regression[which(Scatterplot_Interaction_effects.UC$Diagnosis_regression == 0)] <- 'Control'
+Scatterplot_Interaction_effects.UC$Diagnosis_regression[which(Scatterplot_Interaction_effects.UC$Diagnosis_regression == 1)] <- 'CD'
+Scatterplot_Interaction_effects.UC$Diagnosis_regression <- as.factor(Scatterplot_Interaction_effects.UC$Diagnosis_regression)
+
+fig <- plot_ly(Scatterplot_Interaction_effects.UC, x = ~q2_metab, y = ~q1_microb, z = ~q1_enzymes, color = ~Diagnosis_regression, colors = c('turquoise3', 'indianred1'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'metabolites LV2'),
+                     yaxis = list(title = 'microbiota LV1'),
+                     zaxis = list(title = 'enzymes LV1')))
+
+fig
+```
+
+```{r}
+ggplot(Scatterplot_Interaction_effects.UC,aes(q2_metab,q1_microb,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV2", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+
+```{r}
+ggplot(Scatterplot_Interaction_effects.UC,aes(q2_metab,q1_enzymes,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV2", y = "Enzymes Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+
+```{r}
+ggplot(Scatterplot_Interaction_effects.UC,aes(q1_microb,q1_enzymes,colour=Diagnosis))+geom_point(size = 4) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Microbiota Composition LV1", y = "Enzyme Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 18) + theme(legend.position = "top") 
+```
+
+```{r}
+#jpeg("rplot1.CD.jpg") 
+#ggplot(Scatterplot_Interaction_effects.UC,aes(q1_metab,q1_microb,colour=Diagnosis))+geom_point(size = 7) + theme(legend.position = "top") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV1", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18))
+#dev.off()
+```
+
+```{r}
+#pdf("rplot5.CD.pdf") 
+#ggplot(Scatterplot_Interaction_effects.UC,aes(q1_metab,q1_microb,colour=Diagnosis))+geom_point(size = 6) + theme(legend.text = element_text(colour="black", size=24)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV1", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 24)) + theme(axis.title.y = element_text(size = 24)) +theme(axis.title.y = element_text(size = 24)) + theme_bw(base_size = 24) + theme(legend.position = "top") 
+#dev.off()
+```
+
+# Crohn Disease
+
+## Import Data sets
+
+```{r}
+data_file <- "~/Desktop/IBD_article/X_CD_metabolites_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_enzymes_train
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.metabolites.1.xlsx"
+sparse.metabolites.1 <- read_excel (path = data_file, sheet = 1)
+sparse.metabolites.1
+data_file <- "~/Desktop/IBD_article/vip.metabolites.1.xlsx"
+vip.metabolites.1 <- read_excel(path = data_file)
+vip.metabolites.1
+vector_features.metabolites.CD <- intersect(sparse.metabolites.1$value, vip.metabolites.1$features)
+vector_features.metabolites.CD
+metabolites_CD_matrix_VIP1 <- X_CD_metabolites_train %>% dplyr::select ((vector_features.metabolites.CD))
+metabolites_CD_matrix_VIP1
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.microbiota.1.xlsx"
+sparse.microbiota.1 <- read_excel (path = data_file, sheet = 1)
+sparse.metabolites.1
+data_file <- "~/Desktop/IBD_article/vip.microbiota.1.xlsx"
+vip.microbiota.1 <- read_excel(path = data_file)
+vip.microbiota.1
+vector_features.microbiota.CD <- intersect(sparse.microbiota.1$value, vip.microbiota.1$features)
+vector_features.microbiota.CD
+microbiota_CD_matrix_VIP1 <- X_CD_microbiota_train %>% dplyr::select ((vector_features.microbiota.CD))
+microbiota_CD_matrix_VIP1
+```
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.enzymes.1.xlsx"
+sparse.enzymes.1 <- read_excel (path = data_file, sheet = 1)
+sparse.enzymes.1
+data_file <- "~/Desktop/IBD_article/vip.enzymes.1.xlsx"
+vip.enzymes.1 <- read_excel(path = data_file)
+vip.enzymes.1
+vector_features.enzymes.CD <- intersect(sparse.enzymes.1$value, vip.enzymes.1$features)
+enzymes_CD_matrix_VIP1 <- X_CD_enzymes_train %>% dplyr::select ((vector_features.enzymes.CD))
+enzymes_CD_matrix_VIP1
+```
+
+# Correlational Matrices Crohn Disease
+
+# Metabolites and Microbiota
+## Correlation matrix, t_value, p_value, and fdr. 
+
+```{r}
+library("Hmisc")
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+    )
+}
+```
+
+```{r}
+metabolite_microbiota_CD_VP1 <- cbind(metabolites_CD_matrix_VIP1, microbiota_CD_matrix_VIP1)
+metabolite_microbiota_CD_VP1
+```
+```{r}
+res2 <- rcorr(as.matrix(metabolite_microbiota_CD_VP1))
+metabolite_microbiota_CD <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_microbiota_CD
+metabolite_microbiota_CD <- metabolite_microbiota_CD %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+metabolite_microbiota_CD <- metabolite_microbiota_CD %>% filter (metabolite_microbiota_CD$fdr < 0.01)
+metabolite_microbiota_CD
+#write.xlsx(metabolite_microbiota_CD, file = "metabolite_microbiota_CD.xlsx")
+```
+
+```{r}
+library(heatmap3)
+pdf ("res_metabolite_microbiota_CD.pdf")
+res_metabolite_microbiota_CD <- cor (metabolite_microbiota_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_microbiota_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off
+```
+
+# Metabolites and Enzymes
+## Correlation matrix, t_value, p_value, and fdr.
+
+```{r}
+metabolite_enzymes_CD_VP1 <- cbind(metabolites_CD_matrix_VIP1, enzymes_CD_matrix_VIP1)
+metabolite_enzymes_CD_VP1
+```
+
+```{r}
+res2 <- rcorr(as.matrix(metabolite_enzymes_CD_VP1 ))
+metabolite_enzymes_CD <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_enzymes_CD
+metabolite_enzymes_CD <- metabolite_enzymes_CD %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+metabolite_enzymes_CD <- metabolite_enzymes_CD %>% filter (metabolite_enzymes_CD$fdr < 0.01)
+metabolite_enzymes_CD
+#write.xlsx(metabolite_enzymes_CD, file = "metabolite_enzymes_CD.xlsx")
+```
+
+```{r}
+pdf("res_metabolite_enzymes_CD.pdf")
+res_metabolite_enzymes_CD <- cor (metabolite_enzymes_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(40)
+heatmap3(x = res_metabolite_enzymes_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off
+```
+
+# Microbiota and Enzymes
+## Correlation matrix, t_value, p_value, and fdr. 
+
+```{r}
+microbiota_enzymes_CD_VP1 <- cbind(microbiota_CD_matrix_VIP1, enzymes_CD_matrix_VIP1)
+microbiota_enzymes_CD_VP1
+```
+
+```{r}
+res2 <- rcorr(as.matrix(microbiota_enzymes_CD_VP1 ))
+microbiota_enzymes_CD <- flattenCorrMatrix(res2$r, res2$P)
+microbiota_enzymes_CD
+microbiota_enzymes_CD <- microbiota_enzymes_CD %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+microbiota_enzymes_CD <- microbiota_enzymes_CD %>% filter (microbiota_enzymes_CD$fdr < 0.01)
+microbiota_enzymes_CD
+#write.xlsx(microbiota_enzymes_CD, file = "microbiota_enzymes_CD.xlsx")
+```
+
+```{r}
+metabolite_microbiota_enzymes_CD <- bind_rows(metabolite_microbiota_CD, metabolite_enzymes_CD, microbiota_enzymes_CD)
+metabolite_microbiota_enzymes_CD
+write.xlsx(metabolite_microbiota_enzymes_CD, file = "metabolite_microbiota_enzymes_CD.xlsx")
+```
+
+```{r}
+pdf ("res_microbiota_enzymes_CD.pdf")
+res_microbiota_enzymes_CD <- cor (microbiota_enzymes_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(40)
+heatmap3(x = res_microbiota_enzymes_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off()
+```
+
+# Ulcerative Colitis
+
+## Import Data Set
+
+```{r}
+data_file <- "~/Desktop/IBD_article/X_UC_metabolites_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_enzymes_train
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.metabolites.2.UC.xlsx"
+sparse.metabolites.2.UC <- (read_excel (path = data_file, sheet = 1))
+sparse.metabolites.2.UC
+data_file <- "~/Desktop/IBD_article/vip.metabolites.2.UC.xlsx"
+vip.metabolites.2.UC <- read_excel(path = data_file)
+vip.metabolites.2.UC
+vector_features.metabolites.UC <- intersect(sparse.metabolites.2.UC$value, vip.metabolites.2.UC$features)
+metabolites_UC_matrix_VIP1 <- X_UC_metabolites_train %>% dplyr::select ((vector_features.metabolites.UC))
+metabolites_UC_matrix_VIP1
+```
+
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.microbiota.1.UC.xlsx"
+sparse.microbiota.1.UC <- read_excel (path = data_file, sheet = 1)
+sparse.microbiota.1.UC
+data_file <- "~/Desktop/IBD_article/vip.microbiota.1.UC.xlsx"
+vip.microbiota.1.UC <- read_excel(path = data_file)
+vip.microbiota.1.UC
+vector_features.microbiota.UC <- intersect(sparse.microbiota.1.UC$value, vip.microbiota.1.UC$features)
+microbiota_UC_matrix_VIP1 <- X_UC_microbiota_train %>% dplyr::select ((vector_features.microbiota.UC))
+microbiota_UC_matrix_VIP1
+```
+```{r}
+data_file <- "~/Desktop/IBD_article/sparse.enzymes.1.UC.xlsx"
+sparse.enzymes.1.UC <- read_excel (path = data_file, sheet = 1)
+sparse.enzymes.1.UC
+data_file <- "~/Desktop/IBD_article/vip.enzymes.1.UC.xlsx"
+vip.enzymes.1.UC <- read_excel(path = data_file)
+vip.enzymes.1.UC
+vector_features.enzymes.UC <- intersect(sparse.enzymes.1.UC$value, vip.enzymes.1.UC$features)
+enzymes_UC_matrix_VIP1 <- X_UC_enzymes_train %>% dplyr::select ((vector_features.enzymes.UC))
+enzymes_UC_matrix_VIP1
+```
+
+# Correlational Matrices Ulcerative Colitis
+
+# Metabolites and microbiota
+## Correlation matrix, t_value, p_value, and fdr. 
+
+```{r}
+metabolite_microbiota_UC_VP1 <- cbind(metabolites_UC_matrix_VIP1, microbiota_UC_matrix_VIP1)
+metabolite_microbiota_UC_VP1
+```
+
+```{r}
+res2 <- rcorr(as.matrix(metabolite_microbiota_UC_VP1 ))
+metabolite_microbiota_UC <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_microbiota_UC <- metabolite_microbiota_UC %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+metabolite_microbiota_UC
+metabolite_microbiota_UC <- metabolite_microbiota_UC %>% filter (metabolite_microbiota_UC$fdr < 0.01)
+metabolite_microbiota_UC
+#write.xlsx(metabolite_microbiota_UC, file = "metabolite_microbiota_UC.xlsx")
+```
+
+```{r}
+pdf ("res_metabolite_microbiota_UC.pdf")
+res_metabolite_microbiota_UC <- cor (metabolite_microbiota_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_microbiota_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off ()
+```
+
+# Metabolites and enzymes
+## Correlation matrix, t_value, p_value, and fdr.  
+
+```{r}
+metabolite_enzymes_UC_VP1 <- cbind(metabolites_UC_matrix_VIP1, enzymes_UC_matrix_VIP1)
+metabolite_enzymes_UC_VP1
+```
+
+```{r}
+res2 <- rcorr(as.matrix(metabolite_enzymes_UC_VP1))
+metabolite_enzymes_UC <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_enzymes_UC
+metabolite_enzymes_UC <- metabolite_enzymes_UC %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+metabolite_enzymes_UC <- metabolite_enzymes_UC %>% filter (metabolite_enzymes_UC$fdr < 0.01)
+metabolite_enzymes_UC
+#(metabolite_enzymes_UC, file = "metabolite_enzymes_UC.xlsx")
+```
+```{r}
+pdf ("res_metabolite_enzymes_UC.pdf")
+res_metabolite_enzymes_UC <- cor (metabolite_enzymes_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_enzymes_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off ()
+```
+
+# Microbiota and enzymes
+## Correlation matrix, t_value, p_value, fdr and log fold change 
+
+```{r}
+microbiota_enzymes_UC_VP1 <- cbind(microbiota_UC_matrix_VIP1, enzymes_UC_matrix_VIP1)
+microbiota_enzymes_UC_VP1
+```
+
+```{r}
+res2 <- rcorr(as.matrix(microbiota_enzymes_UC_VP1 ))
+microbiota_enzymes_UC <- flattenCorrMatrix(res2$r, res2$P)
+microbiota_enzymes_UC
+microbiota_enzymes_UC <- microbiota_enzymes_UC %>% mutate (fdr = p.adjust(p, method = "fdr")) 
+microbiota_enzymes_UC <- microbiota_enzymes_UC %>% filter (microbiota_enzymes_UC$fdr < 0.01)
+microbiota_enzymes_UC
+#write.xlsx(microbiota_enzymes_UC, file = "microbiota_enzymes_UC.xlsx")
+```
+
+```{r}
+pdf("res_microbiota_enzymes_UC.pdf") 
+res_microbiota_enzymes_UC <- cor (microbiota_enzymes_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_microbiota_enzymes_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off()
+```
+
+```{r}
+metabolite_microbiota_enzymes_UC <- bind_rows(metabolite_microbiota_UC, metabolite_enzymes_UC, microbiota_enzymes_UC)
+metabolite_microbiota_enzymes_UC
+write.xlsx(metabolite_microbiota_enzymes_UC, file = "metabolite_microbiota_enzymes_UC.xlsx")
+```
+
+#Cytoscape Section - Fold Change (raw data), Node and Edge file
+
+## Crohn Disease
+
+```{r}
+X_CD_metabolites_train
+X_CD_microbiota_train
+X_CD_enzymes_train
+data_file <- "~/Desktop/IBD_article/Y_CD_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_CD_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_CD_diagnosis_train
+```
+```{r}
+foldchange.metabolites <- cbind (Y_CD_diagnosis_train, X_CD_metabolites_train)
+CD.metabolites <- foldchange.metabolites %>% filter (Diagnosis == "CD")
+control.metabolites <- foldchange.metabolites %>% filter (Diagnosis == "Control")
+foldchange.microbiota <- cbind (Y_CD_diagnosis_train, X_CD_microbiota_train)
+CD.microbiota <- foldchange.microbiota %>% filter (Diagnosis == "CD")
+control.microbiota <- foldchange.microbiota %>% filter (Diagnosis == "Control")
+foldchange.enzymes <- cbind (Y_CD_diagnosis_train, X_CD_enzymes_train)
+CD.enzymes <- foldchange.enzymes %>% filter (Diagnosis == "CD")
+control.enzymes <- foldchange.enzymes %>% filter (Diagnosis == "Control")
+```
+
+```{r}
+CD.metabolites.mean <- apply(CD.metabolites [-1],2, mean)
+control.metabolites.mean <- apply(control.metabolites[-1],2,mean)
+foldchange.metabolites <- as.tibble (CD.metabolites.mean - control.metabolites.mean)
+foldchange.metabolites
+
+CD.microbiota.mean <- apply(CD.microbiota [-1],2, mean)
+control.microbiota.mean <- apply(control.microbiota [-1],2,mean)
+foldchange.microbiota <- as.tibble (CD.microbiota.mean - control.microbiota.mean)
+foldchange.microbiota
+
+CD.enzymes.mean <- apply(CD.enzymes [-1],2, mean)
+control.enzymes.mean <- apply(control.enzymes[-1],2,mean)
+foldchange.enzymes <- as.tibble (CD.enzymes.mean - control.enzymes.mean)
+foldchange.enzymes
+
+foldchange <- as_vector (rbind (foldchange.metabolites, foldchange.microbiota, foldchange.enzymes))
+foldchange
+```
+
+```{r}
+hist(foldchange.metabolites, xlab = "log2 Fold Change (Control vs CD)")
+hist(foldchange.microbiota, xlab = "log2 Fold Change (Control vs CD)")
+hist(foldchange.enzymes, xlab = "log2 Fold Change (Control vs CD)")
+```
+
+```{r}
+## Features
+nodefile.column.metabolites.CD <- colnames (X_CD_metabolites_train)
+head (nodefile.column.metabolites.CD)
+nodefile.column.microbiota.CD <- colnames (X_CD_microbiota_train)
+head (nodefile.column.microbiota.CD)
+nodefile.column.enzymes.CD <- colnames (X_CD_enzymes_train)
+head (nodefile.column.enzymes.CD)
+nodefile <- as_tibble (c(nodefile.column.metabolites.CD, nodefile.column.microbiota.CD, nodefile.column.enzymes.CD))
+
+##Type
+metabolites <- rep("metabolite", times = 3829)
+microbiota <- rep("microbiota", times = 201)
+enzymes <- rep("enzyme", times = 2113)
+type_features <- c(metabolites, microbiota, enzymes)
+
+##VIP
+data_file <- "~/Desktop/IBD_article/linn.vip.metabolites.xlsx"
+linn.vip.metabolites <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.microbiota.xlsx"
+linn.vip.microbiota <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.enzymes.xlsx"
+linn.vip.enzymes <- read_excel (path = data_file, sheet = 1)
+metabolites_CD_VIP <- linn.vip.metabolites$comp1
+microbiota_CD_VIP <- linn.vip.microbiota$comp1
+enzymes_CD_VIP <- linn.vip.enzymes$comp1
+VIP <- c(metabolites_CD_VIP, microbiota_CD_VIP, enzymes_CD_VIP)
+
+nodefile <- nodefile %>% mutate (type = type_features) %>% mutate (log_FC = foldchange) %>% mutate (VIP = VIP)
+colnames(nodefile) <- c("features", "type", "log_FC", "VIP")
+nodefile
+```
+
+Test
+```{r}
+nodefile %>% filter (features =="2.7.11.22: Cyclin-dependent kinase")
+```
+
+```{r}
+write.xlsx(nodefile, file = "nodefile.CD.xlsx")
+```
+
+## Ulcerative Colitits
+```{r}
+X_UC_metabolites_train
+X_UC_microbiota_train
+X_UC_enzymes_train
+data_file <- "~/Desktop/IBD_article/Y_UC_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_UC_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_UC_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_UC_diagnosis_train
+```
+
+```{r}
+X_UC_microbiota_train_not_log
+log (X_UC_microbiota_train_not_log + 1)
+```
+
+```{r}
+foldchange.metabolites.UC <- cbind (Y_UC_diagnosis_train, X_UC_metabolites_train)
+UC.metabolites <- foldchange.metabolites.UC %>% filter (Diagnosis == "UC")
+control.metabolites.UC <- foldchange.metabolites.UC %>% filter (Diagnosis == "Control")
+
+foldchange.microbiota.UC <- cbind (Y_UC_diagnosis_train, X_UC_microbiota_train)
+UC.microbiota <- foldchange.microbiota.UC %>% filter (Diagnosis == "UC")
+control.microbiota.UC <- foldchange.microbiota.UC %>% filter (Diagnosis =="Control")
+
+foldchange.enzymes.UC <- cbind (Y_UC_diagnosis_train, X_UC_enzymes_train)
+UC.enzymes <- foldchange.enzymes.UC %>% filter (Diagnosis == "UC")
+control.enzymes.UC <- foldchange.enzymes.UC %>% filter (Diagnosis == "Control")
+```
+
+```{r}
+UC.metabolites.mean <- apply(UC.metabolites [-1],2, mean)
+control.metabolites.mean.UC <- apply(control.metabolites.UC[-1],2,mean)
+foldchange.metabolites.UC <- as.tibble (UC.metabolites.mean - control.metabolites.mean.UC)
+foldchange.metabolites.UC
+
+UC.microbiota.mean <- apply(UC.microbiota [-1],2, mean)
+control.microbiota.mean.UC <- apply(control.microbiota.UC [-1],2,mean)
+foldchange.microbiota.UC <- as.tibble (UC.microbiota.mean - control.microbiota.mean.UC)
+foldchange.microbiota.UC
+
+UC.enzymes.mean <- apply(UC.enzymes [-1],2, mean)
+control.enzymes.mean.UC <- apply(control.enzymes.UC[-1],2,mean)
+foldchange.enzymes.UC <- as.tibble (UC.enzymes.mean - control.enzymes.mean.UC)
+foldchange.enzymes.UC
+
+foldchange.UC <- as_vector (rbind (foldchange.metabolites.UC, foldchange.microbiota.UC, foldchange.enzymes.UC))
+foldchange.UC
+```
+
+```{r}
+hist(foldchange.metabolites.UC, xlab = "log2 Fold Change (Control vs UC)")
+hist(foldchange.microbiota.UC, xlab = "log2 Fold Change (Control vs UC)")
+hist(foldchange.enzymes.UC, xlab = "log2 Fold Change (Control vs UC)")
+```
+
+```{r}
+## Features
+nodefile.column.metabolites.UC <- colnames (X_UC_metabolites_train)
+head (nodefile.column.metabolites.UC)
+nodefile.column.microbiota.UC <- colnames (X_UC_microbiota_train)
+head (nodefile.column.microbiota.UC)
+nodefile.column.enzymes.UC <- colnames (X_UC_enzymes_train)
+head (nodefile.column.enzymes.UC)
+nodefile.UC <- as_tibble (c(nodefile.column.metabolites.UC, nodefile.column.microbiota.UC, nodefile.column.enzymes.UC))
+
+##Type
+metabolites <- rep("metabolite", times = 3829)
+microbiota <- rep("microbiota", times = 201)
+enzymes <- rep("enzyme", times = 2113)
+type_features <- c(metabolites, microbiota, enzymes)
+
+##VIP
+data_file <- "~/Desktop/IBD_article/linn.vip.metabolites.UC.xlsx"
+linn.vip.metabolites.UC <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.microbiota.UC.xlsx"
+linn.vip.microbiota.UC <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.enzymes.UC.xlsx"
+linn.vip.enzymes.UC <- read_excel (path = data_file, sheet = 1)
+metabolites_UC_VIP <- linn.vip.metabolites.UC$comp2
+microbiota_UC_VIP <- linn.vip.microbiota.UC$comp1
+enzymes_UC_VIP <- linn.vip.enzymes.UC$comp1
+VIP.UC <- c(metabolites_UC_VIP, microbiota_UC_VIP, enzymes_UC_VIP)
+
+nodefile.UC <- nodefile.UC %>% mutate (type = type_features) %>% mutate (log_FC = foldchange.UC) %>% mutate (VIP = VIP.UC)
+colnames(nodefile.UC) <- c("features", "type", "log_FC", "VIP")
+nodefile.UC
+```
+
+Test
+```{r}
+nodefile.UC %>% filter (features == "2.7.11.22: Cyclin-dependent kinase")
+```
+
+```{r}
+write.xlsx(nodefile.UC, file = "nodefile.UC.xlsx")
+```
+
+# Supplemental Material
+# Another approach CD
+# Metabolites and microbiota
+```{r}
+library (corrplot)
+library(magrittr)
+library (openxlsx)
+matrix_cor_metab_microb <- cor(metabolites_CD_matrix_VIP1,microbiota_CD_matrix_VIP1)
+cor_metab_microb <- as.vector (matrix_cor_metab_microb)
+pairs_metab_microb <- expand.grid(vector_features.metabolites.CD, vector_features.microbiota.CD)
+t_value <- (cor_metab_microb) * sqrt(2368-2)/sqrt(1-(cor_metab_microb)^2)
+table_cor_metab_microb <- pairs_metab_microb %>% mutate (cor = cor_metab_microb) %>% mutate (t_value = t_value) %>% mutate (p_value = 2*pt(t_value, df = 2366, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_metab_microb) <- c("metabolites", "microbiota", "cor", "t_value", "p_value", "fdr")
+table_cor_metab_microb
+table_cor_metab_microb %>% filter (table_cor_metab_microb$fdr < 0.01)
+write.xlsx(table_cor_metab_microb, file = "table_cor_metab_microb.xlsx")
+```
+## Correlation map
+```{r}
+library (heatmap3)
+pdf("CD_metabolites_microbiota.pdf")
+heatmap3(matrix_cor_metab_microb, margins=c(10,20), ColSideWidth=20)
+dev.off()
+```
+# Metabolites and enzymes
+```{r}
+matrix_cor_metab_enzymes <- cor(metabolites_CD_matrix_VIP1,enzymes_CD_matrix_VIP1)
+cor_metab_enzymes <- as.vector (matrix_cor_metab_enzymes)
+pairs_metab_enzymes <- expand.grid(vector_features.metabolites.CD, vector_features.enzymes.CD)
+t_value_metab_enzymes <- (cor_metab_enzymes) * sqrt(5376-2)/sqrt(1-(cor_metab_enzymes)^2)
+table_cor_metab_enzymes <- pairs_metab_enzymes %>% mutate (cor = cor_metab_enzymes) %>% mutate (t_value = t_value_metab_enzymes) %>% mutate (p_value = 2*pt(t_value_metab_enzymes, df = 5374, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_metab_enzymes) <- c("metabolites", "enzymes", "cor", "t_value", "p_value", "fdr")
+table_cor_metab_enzymes
+table_cor_metab_enzymes %>% filter (table_cor_metab_enzymes$fdr < 0.01)
+write.xlsx(table_cor_metab_enzymes, file = "table_cor_metab_enzymes.xlsx")
+```
+## Correlation map
+```{r}
+library (heatmap3)
+pdf("CD_metabolites_enzymes.pdf")
+heatmap3(matrix_cor_metab_enzymes, margins=c(20,20), ColSideWidth=20)
+dev.off()
+```
+# Microbiota and enzymes
+```{r}
+matrix_cor_microb_enzymes <- cor(microbiota_CD_matrix_VIP1,enzymes_CD_matrix_VIP1)
+cor_microb_enzymes <- as.vector (matrix_cor_microb_enzymes)
+pairs_microb_enzymes <- expand.grid(vector_features.microbiota.CD, vector_features.enzymes.CD)
+t_value_microb_enzymes <- (cor_microb_enzymes) * sqrt(3108-2)/sqrt(1-cor_microb_enzymes^2)
+table_cor_microb_enzymes <- pairs_microb_enzymes %>% mutate (cor = cor_microb_enzymes) %>% mutate (t_value_microb_enzymes = t_value_microb_enzymes) %>% mutate (p_value = 2*pt(t_value_microb_enzymes, df = 3106, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_microb_enzymes) <- c("microbiota", "enzymes", "cor", "t_value", "p_value", "fdr")
+table_cor_microb_enzymes
+table_cor_microb_enzymes %>% dplyr::filter (table_cor_microb_enzymes$fdr < 0.01)
+write.xlsx(table_cor_microb_enzymes, file = "table_cor_microb_enzymes.xlsx")
+```
+## Correlation map
+```{r}
+library (heatmap3)
+pdf("CD_microbiota_enzymes.pdf")
+heatmap3(matrix_cor_microb_enzymes, margins=c(16,13), ColSideWidth=20)
+dev.off()
+```
+
+# Another approach UC
+# Metabolites and microbiota
+```{r}
+library (corrplot)
+library(magrittr)
+library (openxlsx)
+matrix_cor_metab_microb.UC <- cor(metabolites_UC_matrix_VIP1,microbiota_UC_matrix_VIP1)
+cor_metab_microb.UC <- as.vector (matrix_cor_metab_microb.UC)
+pairs_metab_microb.UC <- expand.grid(vector_features.metabolites.UC, vector_features.microbiota.UC)
+t_value.UC <- (cor_metab_microb.UC) * sqrt(2144-2)/sqrt(1-(cor_metab_microb.UC)^2)
+table_cor_metab_microb.UC <- pairs_metab_microb.UC %>% mutate (cor = cor_metab_microb.UC) %>% mutate (t_value = t_value.UC) %>% mutate (p_value = 2*pt(t_value, df = 2142, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_metab_microb.UC) <- c("metabolites", "microbiota", "cor", "t_value", "p_value", "fdr")
+table_cor_metab_microb.UC
+table_cor_metab_microb.UC %>% filter (table_cor_metab_microb.UC$fdr < 0.01)
+write.xlsx(table_cor_metab_microb.UC, file = "table_cor_metab_microb.UC.xlsx")
+```
+## Correlation map
+```{r}
+library (heatmap3)
+pdf("UC_metabolites_microbiota.pdf")
+heatmap3(matrix_cor_metab_microb.UC, margins=c(15,19), ColSideWidth=20)
+dev.off()
+```
+#Metabolites and enzymes
+```{r}
+matrix_cor_metab_enzymes.UC <- cor(metabolites_UC_matrix_VIP1,enzymes_UC_matrix_VIP1)
+cor_metab_enzymes.UC <- as.vector (matrix_cor_metab_enzymes.UC)
+pairs_metab_enzymes.UC <- expand.grid(vector_features.metabolites.UC, vector_features.enzymes.UC)
+t_value_metab_enzymes.UC <- (cor_metab_enzymes.UC) * sqrt(4690-2)/sqrt(1-(cor_metab_enzymes.UC)^2)
+table_cor_metab_enzymes.UC <- pairs_metab_enzymes.UC %>% mutate (cor = cor_metab_enzymes.UC) %>% mutate (t_value = t_value_metab_enzymes.UC) %>% mutate (p_value = 2*pt(t_value_metab_enzymes.UC, df = 4688, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_metab_enzymes.UC) <- c("metabolites", "enzymes", "cor", "t_value", "p_value", "fdr")
+table_cor_metab_enzymes.UC
+table_cor_metab_enzymes.UC %>% filter (table_cor_metab_enzymes.UC$fdr < 0.01)
+write.xlsx(table_cor_metab_enzymes.UC, file = "table_cor_metab_enzymes.UC.xlsx")
+```
+## Correlational map
+```{r}
+library (heatmap3)
+pdf("UC_metabolites_enzymes.pdf")
+heatmap3(matrix_cor_metab_enzymes.UC, margins=c(20,17), ColSideWidth=20)
+dev.off()
+```
+# Microbiota and enzymes
+```{r}
+matrix_cor_microb_enzymes.UC <- cor(microbiota_UC_matrix_VIP1,enzymes_UC_matrix_VIP1, method ="spearman")
+cor_microb_enzymes.UC <- as.vector (matrix_cor_microb_enzymes.UC)
+pairs_microb_enzymes.UC <- expand.grid(vector_features.microbiota.UC, vector_features.enzymes.UC)
+t_value_microb_enzymes.UC <- (cor_microb_enzymes.UC) * sqrt(2240-2)/sqrt(1-(cor_microb_enzymes.UC)^2)
+table_cor_microb_enzymes.UC <- pairs_microb_enzymes.UC %>% mutate (cor = cor_microb_enzymes.UC) %>% mutate (t_value = t_value_microb_enzymes.UC) %>% mutate (p_value = 2*pt(t_value_microb_enzymes.UC, df = 2238, lower.tail = FALSE)) %>% mutate (fdr = p.adjust(p_value, method = "fdr"))
+colnames(table_cor_microb_enzymes.UC) <- c("microbiota", "enzymes", "cor", "t_value", "p_value", "fdr")
+table_cor_microb_enzymes.UC
+table_cor_microb_enzymes.UC %>% filter (table_cor_microb_enzymes.UC$fdr < 0.01)
+write.xlsx(table_cor_microb_enzymes.UC, file = "table_cor_microb_enzymes.UC.xlsx")
+```
+## Correlation map
+```{r}
+library (heatmap3)
+pdf("UC_microbiota_enzymes.pdf")
+heatmap3(matrix_cor_microb_enzymes.UC, margins=c(23,15), ColSideWidth=20)
+dev.off()
+```
+
+```{r}
+sessionInfo()
+```
+
