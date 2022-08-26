@@ -1,0 +1,982 @@
+---
+title: "LIVE Modeling WorkBook 3 - Latent Interaction Variable Effects Linear Model for IBD data set"
+author: "Javier Munoz"
+date: "08/25/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# 0. Rmarkdown
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Linear and Interaction Effects Model
+
+# 1.1 Crohn's Disease
+
+```{r Package import}
+suppressWarnings(library (ggplot2, verbose = FALSE))
+suppressWarnings(library (mixOmics, verbose = FALSE))
+suppressWarnings(library(tidyverse, verbose = FALSE))
+suppressWarnings(library(magrittr, verbose = FALSE))
+suppressWarnings(library (dplyr, verbose = FALSE))
+suppressWarnings(library (alr4,verbose = FALSE))
+suppressWarnings(library (car,verbose = FALSE))
+suppressWarnings(library (readxl, verbose = FALSE))
+suppressWarnings(library (scatterplot3d, verbose = FALSE))
+library (xlsx)
+```
+
+```{r CD - Data Import}
+data_file <- "~/Desktop/IBD_article/CD_regression_comp.xlsx"
+Xavier_data_MLR_CD <- read_excel(path = data_file, sheet = 1)
+Xavier_data_MLR_CD 
+```
+
+```{r CD - Main effects}
+model_main_effects_CD <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes, Xavier_data_MLR_CD)
+summary (model_main_effects_CD)
+```
+
+```{r CD - Interaction Effects - two interactions - metabolite microbiota}
+model_interaction_effects_CD_metabolites_microbiota <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb,Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota)
+```
+
+```{r CD - Interaction Effects - two interactions - metabolite enzymes}
+model_interaction_effects_CD_metabolites_enzymes <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_enzymes + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_enzymes)
+```
+
+```{r CD - Interaction Effects - two interactions - microbiota enzymes}
+model_interaction_effects_CD_microbiota_enzymes <- lm (Diagnosis_regression ~ q1_microb + q1_enzymes + q1_microb*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_microbiota_enzymes)
+```
+
+```{r CD - Interaction Effects - two interactions - metabolite microbiota enzymes}
+model_interaction_effects_CD_metabolites_microbiota_enzymes_two_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes + q1_microb*q1_enzymes,Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota_enzymes_two_factors)
+```
+
+```{r CD - Interaction Effects - three interactions - metabolite microbiota enzymes}
+model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q3_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q3_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q3_metab*q1_enzymes +  q1_microb*q1_enzymes + q1_metab*q1_microb*q1_enzymes + q2_metab*q1_microb*q1_enzymes + q3_metab*q1_microb*q1_enzymes, Xavier_data_MLR_CD)
+summary (model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors)
+```
+
+```{r CD - Interaction Effects - Scatterplot}
+Scatterplot_Interaction_effects <- Xavier_data_MLR_CD %>% select (q1_metab, q1_microb, q1_enzymes, Diagnosis, Diagnosis_regression,q2_metab, q2_microb, q2_enzymes) 
+Scatterplot_Interaction_effects
+```
+
+Note: For the linear regression model, dummy components for microbiota and enzyme composition must be excluded in order to remove the scores. It could generate noise in the model. 
+
+```{r CD - 3D plot Metabolomics LV1 Microbiota Composition LV1 and Enzymes LV1}
+library (plotly)
+
+Scatterplot_Interaction_effects$Diagnosis_regression[which(Scatterplot_Interaction_effects$Diagnosis_regression == 0)] <- 'Control'
+Scatterplot_Interaction_effects$Diagnosis_regression[which(Scatterplot_Interaction_effects$Diagnosis_regression == 1)] <- 'CD'
+Scatterplot_Interaction_effects$Diagnosis_regression <- as.factor(Scatterplot_Interaction_effects$Diagnosis_regression)
+
+fig <- plot_ly(Scatterplot_Interaction_effects, x = ~q1_metab, y = ~q1_microb, z = ~q1_enzymes, color = ~Diagnosis_regression, colors = c('turquoise3', 'indianred1'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'metabolites LV1'),
+                     yaxis = list(title = 'microbiota LV1'),
+                     zaxis = list(title = 'enzymes LV1')))
+
+fig
+```
+
+```{r CD - Metabolomics LV1 and Microbiota Composition LV1 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.CD.metab1.microb1 <- ggplot(Scatterplot_Interaction_effects,aes(q1_metab,q1_microb,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=30)) +  theme(legend.title = element_text(colour="black", size=30)) + labs(x = "Metabolites Composition LV1", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 30)) + theme(axis.title.y = element_text(size = 30)) +theme(axis.title.y = element_text(size = 30)) + theme_bw(base_size = 35) +  theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue')) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.CD.metab1.microb1
+ggsave("plot.CD.metab1.microb1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - Metabolomics LV1 and Enzyme Composition LV1 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.CD.metab1.enzym1 <- ggplot(Scatterplot_Interaction_effects,aes(q1_metab,q1_enzymes,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV1", y = "Enzymes Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue')) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.CD.metab1.enzym1
+ggsave("plot.CD.metab1.enzym1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - Microbiota LV1 and Enzyme Composition LV1 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.CD.enzym1.microb1 <- ggplot(Scatterplot_Interaction_effects,aes(q1_microb,q1_enzymes,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Microbiota Composition LV1", y = "Enzyme Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue')) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.CD.enzym1.microb1
+ggsave("plot.CD.enzym1.microb1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+# Ulcerative Colitis
+
+```{r UC - Data Import}
+data_file <- "~/Desktop/IBD_article/UC_regression_comp.xlsx"
+Xavier_data_MLR_UC <- read_excel(path = data_file)
+Xavier_data_MLR_UC 
+```
+
+```{r UC - Main Effects}
+model_main_effects_UC <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes, Xavier_data_MLR_UC)
+summary (model_main_effects_UC)
+```
+
+```{r UC - Interaction Effects - two interactions - Metabolites Microbiota}
+model_interaction_effects_UC_metabolites_microbiota <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_metab*q1_microb + q2_metab*q1_microb,Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota)
+```
+
+```{r UC - Interaction Effects - two interactions - Metabolites Enzymes}
+model_interaction_effects_UC_metabolites_enzymes <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_enzymes + q1_metab*q1_enzymes + q2_metab*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_enzymes)
+```
+
+```{r UC - Interaction Effects - two interactions - Microbiota Enzymes}
+model_interaction_effects_UC_microbiota_enzymes <- lm (Diagnosis_regression ~ q1_microb + q1_enzymes + q1_microb*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_microbiota_enzymes)
+```
+
+```{r UC - Interaction Effects - two interactions - Metabolites Microbiota Enzymes}
+model_interaction_effects_UC_metabolites_microbiota_enzymes_two_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q1_microb*q1_enzymes,Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota_enzymes_two_factors)
+```
+
+```{r UC - Interaction Effects - three interactions - Metabolites Microbiota Enzymes}
+model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors <- lm (Diagnosis_regression ~ q1_metab + q2_metab + q1_microb + q1_enzymes + q1_metab*q1_microb + q2_metab*q1_microb + q1_metab*q1_enzymes + q2_metab*q1_enzymes + q1_microb*q1_enzymes + q1_metab*q1_microb*q1_enzymes + q2_metab*q1_microb*q1_enzymes, Xavier_data_MLR_UC)
+summary (model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors)
+```
+
+```{r UC - Interaction Effects  - Scatterplot}
+Scatterplot_Interaction_effects.UC <- Xavier_data_MLR_UC %>% select (q1_metab, q1_microb, q1_enzymes, Diagnosis, Diagnosis_regression,q1_metab) 
+Scatterplot_Interaction_effects.UC
+```
+
+```{r UC - 3D plot Metabolomics LV1 Microbiota Composition LV1 and Enzymes LV1}
+library (plotly)
+
+Scatterplot_Interaction_effects.UC$Diagnosis_regression[which(Scatterplot_Interaction_effects.UC$Diagnosis_regression == 0)] <- 'Control'
+Scatterplot_Interaction_effects.UC$Diagnosis_regression[which(Scatterplot_Interaction_effects.UC$Diagnosis_regression == 1)] <- 'CD'
+Scatterplot_Interaction_effects.UC$Diagnosis_regression <- as.factor(Scatterplot_Interaction_effects.UC$Diagnosis_regression)
+
+fig <- plot_ly(Scatterplot_Interaction_effects.UC, x = ~q1_metab, y = ~q1_microb, z = ~q1_enzymes, color = ~Diagnosis_regression, colors = c('turquoise3', 'indianred1'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'metabolites LV1'),
+                     yaxis = list(title = 'microbiota LV1'),
+                     zaxis = list(title = 'enzymes LV1')))
+
+fig
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.UC.metab1.microb1 <- ggplot(Scatterplot_Interaction_effects.UC,aes(q1_metab,q1_microb,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV2", y = "Microbiota Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2")) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.UC.metab1.microb1
+ggsave("plot.UC.metab1.microb1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.UC.metab1.enzym1 <- ggplot(Scatterplot_Interaction_effects.UC,aes(q1_metab,q1_enzymes,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Metabolites Composition LV2", y = "Enzymes Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2")) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.UC.metab1.enzym1
+ggsave("plot.UC.metab1.enzym1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+plot.UC.microb1.enzym1 <- ggplot(Scatterplot_Interaction_effects.UC,aes(q1_microb,q1_enzymes,colour=Diagnosis))+geom_point(size = 10, aes(shape=Diagnosis, color=Diagnosis)) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "Microbiota Composition LV1", y = "Enzyme Composition LV1") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2")) + stat_ellipse(linetype=1, lwd =1.2) 
+plot.UC.microb1.enzym1
+ggsave("plot.UC.microb1.enzym1.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+# 2. Correlation Analysys, t_value, p_value, and fdr. 
+
+# 2.1 Crohn Disease
+
+```{r Import Data Sets}
+data_file <- "~/Desktop/IBD_article/X_CD_metabolites_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_enzymes_train
+```
+
+```{r CD - Import VIPs}
+data_file <- "~/Desktop/IBD_article/sparse.metabolites.1.xlsx"
+sparse.metabolites.1 <- read_excel (path = data_file, sheet = 1)
+sparse.metabolites.1
+data_file <- "~/Desktop/IBD_article/vip.metabolites.1.xlsx"
+vip.metabolites.1 <- read_excel(path = data_file)
+vip.metabolites.1
+vector_features.metabolites.CD <- intersect(sparse.metabolites.1$value, vip.metabolites.1$features)
+vector_features.metabolites.CD
+metabolites_CD_matrix_VIP1 <- X_CD_metabolites_train %>% dplyr::select ((vector_features.metabolites.CD))
+metabolites_CD_matrix_VIP1
+
+data_file <- "~/Desktop/IBD_article/sparse.microbiota.1.xlsx"
+sparse.microbiota.1 <- read_excel (path = data_file, sheet = 1)
+sparse.metabolites.1
+data_file <- "~/Desktop/IBD_article/vip.microbiota.1.xlsx"
+vip.microbiota.1 <- read_excel(path = data_file)
+vip.microbiota.1
+vector_features.microbiota.CD <- intersect(sparse.microbiota.1$value, vip.microbiota.1$features)
+vector_features.microbiota.CD
+microbiota_CD_matrix_VIP1 <- X_CD_microbiota_train %>% dplyr::select ((vector_features.microbiota.CD))
+microbiota_CD_matrix_VIP1
+
+data_file <- "~/Desktop/IBD_article/sparse.enzymes.1.xlsx"
+sparse.enzymes.1 <- read_excel (path = data_file, sheet = 1)
+sparse.enzymes.1
+data_file <- "~/Desktop/IBD_article/vip.enzymes.1.xlsx"
+vip.enzymes.1 <- read_excel(path = data_file)
+vip.enzymes.1
+vector_features.enzymes.CD <- intersect(sparse.enzymes.1$value, vip.enzymes.1$features)
+enzymes_CD_matrix_VIP1 <- X_CD_enzymes_train %>% dplyr::select ((vector_features.enzymes.CD))
+enzymes_CD_matrix_VIP1
+```
+
+```{r CD flattenCorrMatrix}
+library("Hmisc")
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+    )
+}
+```
+
+```{r CD - Metabolite Microbiota 1}
+metabolite_microbiota_CD_VP1 <- cbind(metabolites_CD_matrix_VIP1, microbiota_CD_matrix_VIP1)
+metabolite_microbiota_CD_VP1
+```
+
+```{r CD - Metabolite Microbiota 2}
+res2.metab.microb <- rcorr(as.matrix(metabolite_microbiota_CD_VP1))
+metabolite_microbiota_CD <- flattenCorrMatrix(res2.metab.microb$r, res2.metab.microb$P)
+metabolite_microbiota_CD
+```
+
+```{r CD - Metabolite Microbiota 3}
+res2.metab.microb.table <- data.frame(res2.metab.microb$r)
+res2.metab.microb.table
+res2.metab.microb.table <- rownames_to_column (res2.metab.microb.table, "names") 
+res2.metab.microb.table
+write.xlsx(res2.metab.microb.table,'res2.metab.microb.xlsx')
+```
+
+```{r CD - Metabolite Microbiota 4}
+library(heatmap3)
+pdf ("res_metabolite_microbiota_CD.pdf")
+res_metabolite_microbiota_CD <- cor (metabolite_microbiota_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_microbiota_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off
+```
+
+```{r CD - Metabolite Enzymes 1}
+metabolite_enzymes_CD_VP1 <- cbind(metabolites_CD_matrix_VIP1, enzymes_CD_matrix_VIP1)
+metabolite_enzymes_CD_VP1
+```
+
+```{r CD - Metabolite Enzymes 2}
+res2.metab.enzymes <- rcorr(as.matrix(metabolite_enzymes_CD_VP1))
+metabolite_enzymes_CD <- flattenCorrMatrix(res2.metab.enzymes$r, res2.metab.enzymes$P)
+metabolite_enzymes_CD
+```
+
+```{r CD - Metabolite Enzymes 3}
+res2.metab.enzymes.table <- data.frame(res2.metab.enzymes$r)
+res2.metab.enzymes.table
+res2.metab.enzymes.table <- rownames_to_column (res2.metab.enzymes.table, "names") 
+write.xlsx(res2.metab.enzymes.table,'res2.metab.enzymes.xlsx')
+res2.metab.enzymes.table
+```
+
+```{r CD - Metabolite Enzymes 4}
+pdf("res_metabolite_enzymes_CD.pdf")
+res_metabolite_enzymes_CD <- cor (metabolite_enzymes_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(40)
+heatmap3(x = res_metabolite_enzymes_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off
+```
+
+```{r CD - Microbiota Enzymes 1}
+microbiota_enzymes_CD_VP1 <- cbind(microbiota_CD_matrix_VIP1, enzymes_CD_matrix_VIP1)
+microbiota_enzymes_CD_VP1
+```
+
+```{r CD - Microbiota Enzymes 2}
+res2.microb.enzymes <- rcorr(as.matrix(microbiota_enzymes_CD_VP1))
+microbiota_enzymes_CD <- flattenCorrMatrix(res2.microb.enzymes$r, res2.microb.enzymes$P)
+microbiota_enzymes_CD
+```
+
+```{r CD - Microbiota Enzymes 3}
+res2.microb.enzymes.table <- data.frame(res2.microb.enzymes$r)
+res2.microb.enzymes.table
+res2.microb.enzymes.table <- rownames_to_column (res2.microb.enzymes.table, "names") 
+write.xlsx(res2.microb.enzymes.table,'res2.microb.enzymes.table.xlsx')
+res2.microb.enzymes.table
+```
+
+```{r CD - Microbiota Enzymes 4}
+pdf ("res_microbiota_enzymes_CD.pdf")
+res_microbiota_enzymes_CD <- cor (microbiota_enzymes_CD_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(40)
+heatmap3(x = res_microbiota_enzymes_CD , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off()
+```
+
+```{r CD - Metabolites Microbiota Enzymes - Remove Duplicates}
+metabolite_microbiota_enzymes_CD <- bind_rows(metabolite_microbiota_CD, metabolite_enzymes_CD, microbiota_enzymes_CD)
+metabolite_microbiota_enzymes_CD
+write.xlsx(metabolite_microbiota_enzymes_CD, file = "metabolite_microbiota_enzymes_CD_23188.xlsx")
+metabolite_microbiota_enzymes_CD_noduplicates <- metabolite_microbiota_enzymes_CD %>% dplyr::distinct (cor, .keep_all= TRUE)
+metabolite_microbiota_enzymes_CD_noduplicates
+write.xlsx(metabolite_microbiota_enzymes_CD_noduplicates, file = "metabolite_microbiota_enzymes_CD_16837.xlsx")
+```
+
+Manually curated files
+Note: From the file "metabolite_microbiota_enzymes_CD_noduplicates", same omic (Metabolite-Metabolite, Microbiota-Microbiota, Enzymes-Enzymes) interactions were removed. Then, from p-values, FDR q values are calculated and filtered FDR q < 0.01, FDR q < 0.001, FDR q < 0.001. Please check the supplemental material to obtains final list.
+
+# 2.2 Ulcerative Colitis
+
+```{r UC - Import Data Set}
+data_file <- "~/Desktop/IBD_article/X_UC_metabolites_train.xlsx"
+if(file.exists(data_file)) {
+    X_UC_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_enzymes_train
+```
+
+```{r UC - VIPs}
+data_file <- "~/Desktop/IBD_article/sparse.metabolites.1.UC.xlsx"
+sparse.metabolites.1.UC <- (read_excel (path = data_file, sheet = 1))
+sparse.metabolites.1.UC
+data_file <- "~/Desktop/IBD_article/vip.metabolites.1.UC.xlsx"
+vip.metabolites.1.UC <- read_excel(path = data_file)
+vip.metabolites.1.UC
+vector_features.metabolites.UC <- intersect(sparse.metabolites.1.UC$value, vip.metabolites.1.UC$features)
+metabolites_UC_matrix_VIP1 <- X_UC_metabolites_train %>% dplyr::select ((vector_features.metabolites.UC))
+metabolites_UC_matrix_VIP1
+
+data_file <- "~/Desktop/IBD_article/sparse.microbiota.1.UC.xlsx"
+sparse.microbiota.1.UC <- read_excel (path = data_file, sheet = 1)
+sparse.microbiota.1.UC
+data_file <- "~/Desktop/IBD_article/vip.microbiota.1.UC.xlsx"
+vip.microbiota.1.UC <- read_excel(path = data_file)
+vip.microbiota.1.UC
+vector_features.microbiota.UC <- intersect(sparse.microbiota.1.UC$value, vip.microbiota.1.UC$features)
+microbiota_UC_matrix_VIP1 <- X_UC_microbiota_train %>% dplyr::select ((vector_features.microbiota.UC))
+microbiota_UC_matrix_VIP1
+
+data_file <- "~/Desktop/IBD_article/sparse.enzymes.1.UC.xlsx"
+sparse.enzymes.1.UC <- read_excel (path = data_file, sheet = 1)
+sparse.enzymes.1.UC
+data_file <- "~/Desktop/IBD_article/vip.enzymes.1.UC.xlsx"
+vip.enzymes.1.UC <- read_excel(path = data_file)
+vip.enzymes.1.UC
+vector_features.enzymes.UC <- intersect(sparse.enzymes.1.UC$value, vip.enzymes.1.UC$features)
+enzymes_UC_matrix_VIP1 <- X_UC_enzymes_train %>% dplyr::select ((vector_features.enzymes.UC))
+enzymes_UC_matrix_VIP1
+```
+
+```{r UC - Metabolites Microbiota 1}
+metabolite_microbiota_UC_VP1 <- cbind(metabolites_UC_matrix_VIP1, microbiota_UC_matrix_VIP1)
+metabolite_microbiota_UC_VP1
+```
+
+```{r UC - Metabolites Microbiota 2}
+res2 <- rcorr(as.matrix(metabolite_microbiota_UC_VP1 ))
+metabolite_microbiota_UC <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_microbiota_UC
+```
+
+```{r UC - Metabolites Microbiota 3}
+pdf ("res_metabolite_microbiota_UC.pdf")
+res_metabolite_microbiota_UC <- cor (metabolite_microbiota_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_microbiota_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off ()
+```
+
+```{r UC - Metabolites Enzyme 1}
+metabolite_enzymes_UC_VP1 <- cbind(metabolites_UC_matrix_VIP1, enzymes_UC_matrix_VIP1)
+metabolite_enzymes_UC_VP1
+```
+
+```{r UC - Metabolites Enzyme 2}
+res2 <- rcorr(as.matrix(metabolite_enzymes_UC_VP1))
+metabolite_enzymes_UC <- flattenCorrMatrix(res2$r, res2$P)
+metabolite_enzymes_UC
+```
+
+```{r UC - Metabolites Enzyme 3}
+pdf ("res_metabolite_enzymes_UC.pdf")
+res_metabolite_enzymes_UC <- cor (metabolite_enzymes_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_metabolite_enzymes_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off ()
+```
+
+```{r UC - Microbiota Enzymes 1}
+microbiota_enzymes_UC_VP1 <- cbind(microbiota_UC_matrix_VIP1, enzymes_UC_matrix_VIP1)
+microbiota_enzymes_UC_VP1
+```
+
+```{r UC - Microbiota Enzymes 2}
+res2 <- rcorr(as.matrix(microbiota_enzymes_UC_VP1 ))
+microbiota_enzymes_UC <- flattenCorrMatrix(res2$r, res2$P)
+microbiota_enzymes_UC
+```
+
+```{r UC - Microbiota Enzymes 3}
+pdf("res_microbiota_enzymes_UC.pdf") 
+res_microbiota_enzymes_UC <- cor (microbiota_enzymes_UC_VP1)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap3(x = res_microbiota_enzymes_UC , col = col, symm = TRUE, margins=c(16,15), ColSideWidth=20)
+dev.off()
+```
+
+```{r UC - Metabolites Microbiota Enzymes - Remove Duplicates}
+metabolite_microbiota_enzymes_UC <- bind_rows(metabolite_microbiota_UC, metabolite_enzymes_UC, microbiota_enzymes_UC)
+metabolite_microbiota_enzymes_UC
+write.xlsx(metabolite_microbiota_enzymes_UC, file = "metabolite_microbiota_enzymes_UC_21514.xlsx")
+metabolite_microbiota_enzymes_UC_noduplicates <- metabolite_microbiota_enzymes_UC %>% dplyr::distinct (cor, .keep_all= TRUE)
+metabolite_microbiota_enzymes_UC_noduplicates
+write.xlsx(metabolite_microbiota_enzymes_UC_noduplicates, file = "metabolite_microbiota_enzymes_UC_15577.xlsx")
+```
+
+Manually curated files
+Note: From the file "metabolite_microbiota_enzymes_UC_noduplicates", same omic (Metabolite-Metabolite, Microbiota-Microbiota, Enzymes-Enzymes) interactions were removed. Then, from p-values, FDR q values are calculated and filtered FDR q < 0.01, FDR q < 0.001, FDR q < 0.001. Please check the supplemental material for the final list.
+
+# 3. Cytoscape - Calculate Fold Change (raw data), Node and Edge file
+
+# 3.1 Crohn Disease
+```{r CD - Cytoscape - Import Data Sets}
+X_CD_metabolites_train
+X_CD_microbiota_train
+X_CD_enzymes_train
+data_file <- "~/Desktop/IBD_article/Y_CD_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_CD_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_CD_diagnosis_train
+```
+
+```{r CD - Cytoscape Fold Change 1}
+foldchange.metabolites <- cbind (Y_CD_diagnosis_train, X_CD_metabolites_train)
+CD.metabolites <- foldchange.metabolites %>% filter (Diagnosis == "CD")
+control.metabolites <- foldchange.metabolites %>% filter (Diagnosis == "Control")
+foldchange.microbiota <- cbind (Y_CD_diagnosis_train, X_CD_microbiota_train)
+CD.microbiota <- foldchange.microbiota %>% filter (Diagnosis == "CD")
+control.microbiota <- foldchange.microbiota %>% filter (Diagnosis == "Control")
+foldchange.enzymes <- cbind (Y_CD_diagnosis_train, X_CD_enzymes_train)
+CD.enzymes <- foldchange.enzymes %>% filter (Diagnosis == "CD")
+control.enzymes <- foldchange.enzymes %>% filter (Diagnosis == "Control")
+```
+
+```{r CD - Cytoscape Fold Change 2}
+CD.metabolites.mean <- apply(CD.metabolites [-1],2, mean)
+control.metabolites.mean <- apply(control.metabolites[-1],2,mean)
+foldchange.metabolites <- as.tibble (CD.metabolites.mean - control.metabolites.mean)
+foldchange.metabolites
+
+CD.microbiota.mean <- apply(CD.microbiota [-1],2, mean)
+control.microbiota.mean <- apply(control.microbiota [-1],2,mean)
+foldchange.microbiota <- as.tibble (CD.microbiota.mean - control.microbiota.mean)
+foldchange.microbiota
+
+CD.enzymes.mean <- apply(CD.enzymes [-1],2, mean)
+control.enzymes.mean <- apply(control.enzymes[-1],2,mean)
+foldchange.enzymes <- as.tibble (CD.enzymes.mean - control.enzymes.mean)
+foldchange.enzymes
+
+foldchange <- as_vector (rbind (foldchange.metabolites, foldchange.microbiota, foldchange.enzymes))
+foldchange
+```
+
+```{r CD - Cytoscape Fold Change Histograms}
+hist(foldchange.metabolites, xlab = "log2 Fold Change (Control vs CD)")
+hist(foldchange.microbiota, xlab = "log2 Fold Change (Control vs CD)")
+hist(foldchange.enzymes, xlab = "log2 Fold Change (Control vs CD)")
+```
+
+```{r CD - Cytoscape Node File}
+## Features
+nodefile.column.metabolites.CD <- colnames (X_CD_metabolites_train)
+head (nodefile.column.metabolites.CD)
+nodefile.column.microbiota.CD <- colnames (X_CD_microbiota_train)
+head (nodefile.column.microbiota.CD)
+nodefile.column.enzymes.CD <- colnames (X_CD_enzymes_train)
+head (nodefile.column.enzymes.CD)
+nodefile <- as_tibble (c(nodefile.column.metabolites.CD, nodefile.column.microbiota.CD, nodefile.column.enzymes.CD))
+
+##Type
+metabolites <- rep("metabolite", times = 3829)
+microbiota <- rep("microbiota", times = 201)
+enzymes <- rep("enzyme", times = 2113)
+type_features <- c(metabolites, microbiota, enzymes)
+
+##VIP
+data_file <- "~/Desktop/IBD_article/linn.vip.metabolites.xlsx"
+linn.vip.metabolites <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.microbiota.xlsx"
+linn.vip.microbiota <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.enzymes.xlsx"
+linn.vip.enzymes <- read_excel (path = data_file, sheet = 1)
+metabolites_CD_VIP <- linn.vip.metabolites$comp1
+microbiota_CD_VIP <- linn.vip.microbiota$comp1
+enzymes_CD_VIP <- linn.vip.enzymes$comp1
+VIP <- c(metabolites_CD_VIP, microbiota_CD_VIP, enzymes_CD_VIP)
+
+nodefile <- nodefile %>% mutate (type = type_features) %>% mutate (log_FC = foldchange) %>% mutate (VIP = VIP)
+colnames(nodefile) <- c("features", "type", "log_FC", "VIP")
+nodefile
+```
+
+```{r Test and write CD Node File}
+nodefile %>% filter (features =="2.7.11.22: Cyclin-dependent kinase")
+write.xlsx(nodefile, file = "nodefile.CD.xlsx")
+```
+
+# 3.2 Ulcerative Colitits
+
+```{r UC - Import Data Set}
+X_UC_metabolites_train
+X_UC_microbiota_train
+X_UC_enzymes_train
+data_file <- "~/Desktop/IBD_article/Y_UC_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_UC_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_UC_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_UC_diagnosis_train
+```
+
+```{r UC - Cytoscape metabolites Log Transformation}
+X_UC_metabolites_train <- log(X_UC_metabolites_train + 1)
+X_UC_metabolites_train
+```
+
+```{r UC - Cytoscape Fold Change 1}
+foldchange.metabolites.UC <- cbind (Y_UC_diagnosis_train, X_UC_metabolites_train)
+UC.metabolites <- foldchange.metabolites.UC %>% filter (Diagnosis == "UC")
+control.metabolites.UC <- foldchange.metabolites.UC %>% filter (Diagnosis == "Control")
+
+foldchange.microbiota.UC <- cbind (Y_UC_diagnosis_train, X_UC_microbiota_train)
+UC.microbiota <- foldchange.microbiota.UC %>% filter (Diagnosis == "UC")
+control.microbiota.UC <- foldchange.microbiota.UC %>% filter (Diagnosis =="Control")
+
+foldchange.enzymes.UC <- cbind (Y_UC_diagnosis_train, X_UC_enzymes_train)
+UC.enzymes <- foldchange.enzymes.UC %>% filter (Diagnosis == "UC")
+control.enzymes.UC <- foldchange.enzymes.UC %>% filter (Diagnosis == "Control")
+```
+
+```{r UC - Cytoscape Fold Change 2}
+UC.metabolites.mean <- apply(UC.metabolites [-1],2, mean)
+control.metabolites.mean.UC <- apply(control.metabolites.UC[-1],2,mean)
+foldchange.metabolites.UC <- as.tibble (UC.metabolites.mean - control.metabolites.mean.UC)
+foldchange.metabolites.UC
+
+UC.microbiota.mean <- apply(UC.microbiota [-1],2, mean)
+control.microbiota.mean.UC <- apply(control.microbiota.UC [-1],2,mean)
+foldchange.microbiota.UC <- as.tibble (UC.microbiota.mean - control.microbiota.mean.UC)
+foldchange.microbiota.UC
+
+UC.enzymes.mean <- apply(UC.enzymes [-1],2, mean)
+control.enzymes.mean.UC <- apply(control.enzymes.UC[-1],2,mean)
+foldchange.enzymes.UC <- as.tibble (UC.enzymes.mean - control.enzymes.mean.UC)
+foldchange.enzymes.UC
+
+foldchange.UC <- as_vector (rbind (foldchange.metabolites.UC, foldchange.microbiota.UC, foldchange.enzymes.UC))
+foldchange.UC
+```
+
+```{r UC - Cytoscape Fold Change Histogram}
+hist(foldchange.metabolites.UC, xlab = "log2 Fold Change (Control vs UC)")
+hist(foldchange.microbiota.UC, xlab = "log2 Fold Change (Control vs UC)")
+hist(foldchange.enzymes.UC, xlab = "log2 Fold Change (Control vs UC)")
+```
+
+```{r UC - Cytoscape Node File}
+## Features
+nodefile.column.metabolites.UC <- colnames (X_UC_metabolites_train)
+head (nodefile.column.metabolites.UC)
+nodefile.column.microbiota.UC <- colnames (X_UC_microbiota_train)
+head (nodefile.column.microbiota.UC)
+nodefile.column.enzymes.UC <- colnames (X_UC_enzymes_train)
+head (nodefile.column.enzymes.UC)
+nodefile.UC <- as_tibble (c(nodefile.column.metabolites.UC, nodefile.column.microbiota.UC, nodefile.column.enzymes.UC))
+
+##Type
+metabolites <- rep("metabolite", times = 3829)
+microbiota <- rep("microbiota", times = 201)
+enzymes <- rep("enzyme", times = 2113)
+type_features <- c(metabolites, microbiota, enzymes)
+
+##VIP
+data_file <- "~/Desktop/IBD_article/linn.vip.metabolites.UC.xlsx"
+linn.vip.metabolites.UC <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.microbiota.UC.xlsx"
+linn.vip.microbiota.UC <- read_excel (path = data_file, sheet = 1)
+data_file <- "~/Desktop/IBD_article/linn.vip.enzymes.UC.xlsx"
+linn.vip.enzymes.UC <- read_excel (path = data_file, sheet = 1)
+metabolites_UC_VIP <- linn.vip.metabolites.UC$comp1
+microbiota_UC_VIP <- linn.vip.microbiota.UC$comp1
+enzymes_UC_VIP <- linn.vip.enzymes.UC$comp1
+VIP.UC <- c(metabolites_UC_VIP, microbiota_UC_VIP, enzymes_UC_VIP)
+
+nodefile.UC <- nodefile.UC %>% mutate (type = type_features) %>% mutate (log_FC = foldchange.UC) %>% mutate (VIP = VIP.UC)
+colnames(nodefile.UC) <- c("features", "type", "log_FC", "VIP")
+nodefile.UC
+```
+
+```{r Test and write UC - Node File}
+nodefile.UC %>% filter (features == "2.7.11.22: Cyclin-dependent kinase")
+write.xlsx(nodefile.UC, file = "nodefile.UC.xlsx")
+```
+
+# 4. Outcomes and Figures
+
+# 4.1 LIVE VIP scores
+
+```{r VIP CD - Histogram Plot}
+nodefile
+nodefile.UC
+nodefile.plot <- nodefile %>% dplyr:: filter (type =="metabolite") %>% dplyr:: filter (VIP>=0) %>% arrange (desc(VIP))
+nodefile.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPCD <- ggplot(nodefile.plot, aes(x=(VIP))) + geom_histogram(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") 
+histVIPCD 
+```
+
+```{r CD - ggsave VIP 0 Metabolites}
+ggsave("plot.histVIPCD.metabolites.VIP0.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - VIP 1 Metabolites}
+nodefile.plot <- nodefile %>% dplyr::filter (type == "metabolite") %>% dplyr:: filter (VIP>=1)%>% arrange ((VIP))
+nodefile.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPCD <- ggplot(nodefile.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_blank(), axis.text.x = element_blank(),   axis.ticks.x=element_blank()) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_x_discrete(labels = NULL)
+histVIPCD 
+```
+
+```{r CD - ggsave VIP 1 Metabolites}
+ggsave("plot.histVIPCD.metabolites.VIP1.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - VIP 1 Microbiota}
+nodefile.CD.plot <- nodefile %>% dplyr::filter (type == "microbiota") %>% dplyr:: filter (VIP>=1) %>% arrange (desc(VIP))
+nodefile.CD.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPCD.1 <- ggplot(nodefile.CD.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_x_discrete(labels = NULL)
+histVIPCD.1 
+```
+
+```{r CD - ggsave VIP 1 Microbiota}
+ggsave("plot.microbiota.histVIPCD.1.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - VIP 1 Enzyme 1}
+nodefile.plot <- nodefile %>% dplyr::filter (type == "enzyme") %>% dplyr:: filter (VIP>=1)
+nodefile.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPCD <- ggplot(nodefile.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_x_discrete(labels = NULL)
+histVIPCD 
+```
+
+```{r CD - ggsave VIP 1 Enzyme 2}
+ggsave("plot.histVIPCD.enzymes.VIP0.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - ggsave VIP 1 Enzyme 3}
+nodefile.CD.plot <- nodefile %>% dplyr::filter (type == "enzyme") %>% dplyr:: filter (VIP>=1) %>% arrange (desc(VIP))
+nodefile.CD.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPCD.1 <- ggplot(nodefile.CD.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + scale_x_discrete(labels = NULL)
+histVIPCD.1 
+```
+
+```{r CD - ggsave VIP 1 Enzyme 4}
+ggsave("plot.enzymes.histVIPCD.1.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+
+```{r UC - VIP 1 Metabolites}
+nodefile.UC.plot <- nodefile.UC %>% dplyr::filter (type == "metabolite") %>% dplyr:: filter (VIP>=1) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top")+ scale_x_discrete(labels = NULL)
+histVIPUC 
+```
+
+```{r UC - ggsave VIP 1 Metabolites}
+ggsave("plot.histVIPUC.metabolites.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r UC - VIP 1 Microbiota}
+nodefile.UC.plot <- nodefile.UC %>% dplyr::filter (type == "microbiota") %>% dplyr:: filter (VIP>=1) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top")+ scale_x_discrete(labels = NULL)
+histVIPUC 
+```
+
+```{r UC - ggsave VIP 1 Microbiota}
+ggsave("plot.histVIPUC.microbiota.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r UC - VIP 1 Enzyme}
+nodefile.UC.plot <- nodefile.UC %>% dplyr::filter (type == "enzyme") %>% dplyr:: filter (VIP>=1) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+histVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, -VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "VIP", y = "Count") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top")+ scale_x_discrete(labels = NULL)
+histVIPUC 
+```
+
+```{r UC - ggsave VIP 1 Enzyme}
+ggsave("plot.histVIPUC.enzymes.version2.pdf", units="in", width=12, height=12, dpi=350)
+```
+
+```{r CD - VIP 10 Metabolite}
+nodefile.CD.plot <- nodefile %>% dplyr:: filter (type == "metabolite") %>% dplyr:: filter (VIP>=10) %>% arrange (desc(VIP))
+nodefile.CD.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPCD <- ggplot(nodefile.CD.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00", width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "Count") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPCD 
+```
+```{r CD - ggsave VIP 10 Metabolite}
+ggsave("plot.metabolites.histVIPCD.10.pdf", units="in", width=30, height=30, dpi=350)
+```
+
+```{r CD - VIP 2.5 Microbiota}
+nodefile.CD.plot <- nodefile %>% dplyr:: filter (type == "microbiota") %>% dplyr:: filter (VIP>=2.5) %>% arrange (desc(VIP))
+nodefile.CD.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPCD <- ggplot(nodefile.CD.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00", width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "Count") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPCD 
+```
+```{r CD - ggsave VIP 2.5 Microbiota}
+ggsave("plot.microbiota.histVIPCD.2.5.pdf", units="in", width=30, height=30, dpi=350)
+```
+
+```{r CD - VIP 8 Enzyme}
+nodefile.CD.plot <- nodefile %>% dplyr:: filter (type == "enzyme") %>% dplyr:: filter (VIP>=8) %>% arrange (desc(VIP))
+nodefile.CD.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPCD <- ggplot(nodefile.CD.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00", width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "Count") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPCD 
+```
+```{r CD - ggsave VIP 8 Enzyme}
+ggsave("plot.enzyme.histVIPCD.8.pdf", units="in", width=30, height=30, dpi=350)
+```
+
+```{r UC - VIP 9 Metabolite}
+nodefile.UC.plot <- nodefile.UC %>% dplyr:: filter (type == "metabolite" ) %>% dplyr:: filter (VIP>=9) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00",  width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "VIP") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPUC 
+```
+
+```{r UC - ggsave VIP 9 Metabolite}
+ggsave("plot.histVIPUC.9.metabolites.pdf",units="in", width=30, height=30, dpi=350)
+```
+
+```{r UC - VIP 2.5 Microbiota}
+nodefile.UC.plot <- nodefile.UC %>% dplyr:: filter (type == "microbiota" ) %>% dplyr:: filter (VIP>=2.5) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00",  width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "VIP") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPUC 
+```
+```{r UC - VIP 2.5 Microbiota}
+ggsave("plot.histVIPUC.2.5.microbiota.pdf",units="in", width=30, height=30, dpi=350)
+```
+
+```{r UC - VIP 9.5 Metabolite}
+nodefile.UC.plot <- nodefile.UC %>% dplyr:: filter (type == "enzyme" ) %>% dplyr:: filter (VIP>=9.5) %>% arrange (desc(VIP))
+nodefile.UC.plot 
+```
+
+```{r fig.width=30, fig.height=30, fig.fullwidth=TRUE, dpi = 350}
+colVIPUC <- ggplot(nodefile.UC.plot, aes(x=reorder (features, - VIP), y=VIP)) + geom_col(color="darkblue", fill="#E69F00",  width = 0.5) + theme(legend.text = element_text(colour="black", size=2)) +  theme(legend.title = element_text(colour="black", size=2)) + labs(x = "VIP", y = "VIP") + theme(axis.text=element_text(size=2), axis.title.x = element_text(size = 2)) + theme(axis.title.y = element_text(size = 2)) + theme_bw(base_size = 35) + theme(legend.position = "top") + theme(axis.text.x = element_text(angle = 90))
+colVIPUC 
+```
+
+```{r CD - VIP 9.5 Enzyme}
+ggsave("plot.histVIPUC.9.5.enzyme.pdf",units="in", width=30, height=30, dpi=350)
+```
+
+# 4.2 LIVE regression p-values
+
+```{r CD - p values main effects}
+summary (model_main_effects_CD)
+p_values.CD.main.effects <- c(summary(model_main_effects_CD)$coefficients[,4])
+p_values.CD.main.effects <- as.data.frame(p_values.CD.main.effects) %>% -log10(p_values.CD.main.effects) %>% rownames_to_column(var = "Y")
+p_values.CD.main.effects
+```
+
+```{r CD - p values main effects 2}
+p_values.CD.main.effects <- p_values.CD.main.effects [-1, ] #%>% arrange (p_values.CD)
+p_values.CD.main.effects
+p_values.CD.main.effects$Y <- factor (p_values.CD.main.effects$Y, levels = c ("q1_enzymes","q1_microb", "q3_metab", "q2_metab", "q1_metab"))
+```
+
+```{r fig.width=25, fig.height=25, fig.fullwidth=TRUE, dpi = 350}
+p_values.CD.plot.main.effects <- ggplot(p_values.CD.main.effects, aes(x= Y, y=p_values.CD.main.effects)) + geom_col(color="darkblue", fill="#E69F00", width = 0.5) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "-log p_value", y = "LV") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + coord_flip() 
+p_values.CD.plot.main.effects
+```
+
+```{r CD - ggsave main effects} 
+ggsave("p_values.CD.plot.main.effects.pdf",units="in", width=25, height=25, dpi=350)
+```
+
+```{r CD - p-values Interaction effects 1}
+summary (model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors)
+p_values.CD <- c(summary(model_interaction_effects_CD_metabolites_microbiota_enzymes_three_factors)$coefficients[,4])
+p_values.CD <- as.data.frame(p_values.CD) %>% -log10(p_values.CD) %>% rownames_to_column(var = "Y")
+p_values.CD
+```
+
+```{r CD - p-values Interaction effects 2}
+p_values.CD <- p_values.CD [-1, ] #%>% arrange (p_values.CD)
+p_values.CD
+```
+
+```{r CD - p-values Interaction effects 3}
+p_values.CD$Y <- factor (p_values.CD$Y, levels = c ("q3_metab:q1_microb:q1_enzymes", "q2_metab:q1_microb:q1_enzymes", "q1_metab:q1_microb:q1_enzymes" , "q1_metab:q1_enzymes", "q3_metab:q1_enzymes", "q2_metab:q1_microb","q3_metab:q1_microb", "q1_microb:q1_enzymes", "q1_metab:q1_microb", "q2_metab:q1_enzymes", "q1_enzymes","q1_microb", "q3_metab", "q2_metab", "q1_metab"))
+```
+
+```{r fig.width=25, fig.height=25, fig.fullwidth=TRUE, dpi = 350}
+p_values.CD.plot <- ggplot(p_values.CD, aes(x= Y, y=p_values.CD)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "-log p_value", y = "LV") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + coord_flip() 
+p_values.CD.plot
+```
+
+```{r CD - ggsave Interaction effects}
+ggsave("p_values.CD.plot.pdf",units="in", width=25, height=25, dpi=350)
+```
+
+```{r UC - p-value Interaction Effects 1}
+summary (model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors)
+p_values.UC <- c(summary(model_interaction_effects_UC_metabolites_microbiota_enzymes_three_factors)$coefficients[,4])
+p_values.UC <- as.data.frame(p_values.UC) %>% -log10(p_values.UC) %>% rownames_to_column(var = "Y")
+p_values.UC
+```
+
+```{r UC - p-value Interaction Effects 2}
+p_values.UC <- p_values.UC [-1, ] #%>% arrange (desc(p_values.UC))
+p_values.UC
+```
+
+```{r UC - p-value Interaction Effects 3}
+p_values.UC$Y <- factor (p_values.UC$Y, levels = c ("q2_metab:q1_microb:q1_enzymes", "q1_metab:q1_microb:q1_enzymes","q1_microb:q1_enzymes", "q1_metab:q1_microb", "q2_metab:q1_enzymes", "q1_metab:q1_enzymes","q2_metab:q1_microb", "q1_enzymes","q1_microb","q2_metab","q1_metab"))
+```
+
+```{r fig.width=25, fig.height=25, fig.fullwidth=TRUE, dpi = 350}
+p_values.UC.plot <- ggplot(p_values.UC, aes(x= Y, y=p_values.UC)) + geom_col(color="darkblue", fill="#E69F00") + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "-log p_value", y = "LV") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + coord_flip() 
+p_values.UC.plot
+```
+
+```{r UC - ggsave Interaction Effects}
+ggsave("p_values.UC.plot.pdf",units="in", width=30, height=30, dpi=350)
+```
+
+```{r UC - p-value Main Effects 1}
+summary (model_main_effects_UC)
+p_values.UC.main.effects <- c(summary(model_main_effects_UC)$coefficients[,4])
+p_values.UC.main.effects <- as.data.frame(p_values.UC.main.effects) %>% -log10(p_values.UC.main.effects) %>% rownames_to_column(var = "Y")
+p_values.UC.main.effects
+```
+
+```{r UC - p-value Main Effects 2}
+p_values.UC.main.effects <- p_values.UC.main.effects [-1, ] #%>% arrange (p_values.CD)
+p_values.UC.main.effects
+```
+
+```{r UC - p-value Main Effects 3}
+p_values.UC.main.effects$Y <- factor (p_values.UC.main.effects$Y, levels = c ("q1_enzymes","q1_microb", "q2_metab", "q1_metab"))
+```
+
+```{r fig.width=25, fig.height=25, fig.fullwidth=TRUE, dpi = 350}
+p_values.UC.plot.main.effects <- ggplot(p_values.UC.main.effects, aes(x= Y, y=p_values.UC.main.effects)) + geom_col(color="darkblue", fill="#E69F00", width = 0.5) + theme(legend.text = element_text(colour="black", size=18)) +  theme(legend.title = element_text(colour="black", size=18)) + labs(x = "-log p_value", y = "LV") + theme(axis.title.x = element_text(size = 18)) + theme(axis.title.y = element_text(size = 18)) +theme(axis.title.y = element_text(size = 18)) + theme_bw(base_size = 35) + theme(legend.position = "top") + coord_flip() 
+p_values.UC.plot.main.effects
+```
+
+```{r UC - ggsave Main effects}
+ggsave("p_values.UC.plot.main.effects.pdf",units="in", width=25, height=25, dpi=350)
+```
+
+```{r SessionInfo}
+sessionInfo()
+```
+

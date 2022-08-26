@@ -1,0 +1,1601 @@
+---
+title: "LIVE Modeling WorkBook 2 - Partial Least Square Modeling for IBD data set"
+author: "Javier Munoz"
+date: "August/24/2022"
+output: html_document
+---
+
+# 0. Rmarkdown
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1. CROHN'S DISEASE
+
+```{r Package Import}
+suppressWarnings(library (ggplot2, verbose = FALSE))
+suppressWarnings(library (readxl, verbose = FALSE))
+suppressWarnings(library (viridisLite, verbose = FALSE))
+suppressWarnings(library (pheatmap, verbose = FALSE))
+suppressWarnings(library (mixOmics, verbose = FALSE))
+suppressWarnings(library(tidyverse, verbose = FALSE))
+suppressWarnings(library(magrittr, verbose = FALSE))
+suppressWarnings(library (dplyr, verbose = FALSE))
+```
+
+```{r Data Import and Preprocessing}
+data_file <- "~/Desktop/IBD_article/X_CD_metabolites_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_CD_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_CD_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_CD_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_CD_enzymes_train
+
+data_file <- "~/Desktop/IBD_article/Y_CD_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_CD_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_CD_diagnosis_train
+
+Y_CD_diagnosis_train <- as_vector(Y_CD_diagnosis_train)
+Y_CD_diagnosis_train <- as_factor(Y_CD_diagnosis_train)
+head (Y_CD_diagnosis_train)
+class (Y_CD_diagnosis_train)
+length(Y_CD_diagnosis_train)
+```
+
+# 1.1 CD - Metabolites, Microbiota and Enzymes - PCA and sPCA 
+
+```{r CD - Metabolites - PCA and sPCA}
+tune.pca (X_CD_metabolites_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.metabolites <- spca (X_CD_metabolites_train, ncomp = 3, center = TRUE, scale = FALSE)
+#plot (MyResult.spca.metabolites)
+MyResult.spca.metabolites
+plotIndiv (MyResult.spca.metabolites, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPCA metabolites train on CD', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.metabolites, comp = 1)$value
+plotLoadings(MyResult.spca.metabolites, comp = 1)
+
+selectVar(MyResult.spca.metabolites, comp = 2)$value
+plotLoadings(MyResult.spca.metabolites, comp = 2)
+
+selectVar(MyResult.spca.metabolites, comp = 3)$value
+plotLoadings(MyResult.spca.metabolites, comp = 3)
+```
+
+```{r CD - Microbiota PCA and sPCA}
+tune.pca (X_CD_microbiota_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.microbiota <- spca (X_CD_microbiota_train, ncomp = 3, center = TRUE, scale = FALSE)
+MyResult.spca.microbiota
+plotIndiv (MyResult.spca.microbiota, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPCA microbiota train on CD', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.microbiota, comp = 1)$value
+plotLoadings(MyResult.spca.microbiota, comp = 1)
+
+selectVar(MyResult.spca.microbiota, comp = 2)$value
+plotLoadings(MyResult.spca.microbiota, comp = 2)
+
+selectVar(MyResult.spca.microbiota, comp = 3)$value
+plotLoadings(MyResult.spca.microbiota, comp = 3)
+```
+
+```{r CD - Enzymes PCA and sPCA}
+tune.pca (X_CD_enzymes_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.enzymes <- spca (X_CD_enzymes_train, ncomp = 3, center = TRUE, scale = FALSE)
+MyResult.spca.enzymes
+plotIndiv (MyResult.spca.enzymes, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPCA enzymes train on CD', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.enzymes, comp = 1)$value
+plotLoadings(MyResult.spca.enzymes, comp = 1)
+
+selectVar(MyResult.spca.enzymes, comp = 2)$value
+plotLoadings(MyResult.spca.enzymes, comp = 2)
+
+selectVar(MyResult.spca.enzymes, comp = 3)$value
+plotLoadings(MyResult.spca.enzymes, comp = 3)
+```
+
+# 1.2 CD - Metabolites - sPLSDA
+
+```{r CD - Metabolites sPLSDA 1}
+MyResult.splsda.metabolites <- splsda (X_CD_metabolites_train, Y_CD_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.metabolites, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.metabolites, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA metabolites on CD',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.metabolites)
+```
+
+```{r CD - Metabolites sPLSDA 2}
+selectVar(MyResult.splsda.metabolites, comp = 1)$value
+plotLoadings(MyResult.splsda.metabolites, comp = 1)
+
+selectVar(MyResult.splsda.metabolites, comp = 2)$value
+plotLoadings(MyResult.splsda.metabolites, comp = 2)
+
+selectVar(MyResult.splsda.metabolites, comp = 3)$value
+plotLoadings(MyResult.splsda.metabolites, comp = 3)
+```
+
+```{r CD - Metabolites sPLSDA 3}
+set.seed(30) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda <- perf(MyResult.splsda.metabolites, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda
+plot(MyPerf.splsda, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r CD - Metabolites sPLSDA 4}
+list.keepX <- c(1:10,  seq(10, 100, 10))
+list.keepX # to output the grid of values tested
+```
+
+```{r CD - Metabolites sPLSDA 5 Fine Tune}
+set.seed(40) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsCD <- tune.splsda(X_CD_metabolites_train, Y_CD_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+saveRDS(tune.splsda.controlvsCD, file="tune.splsda.controlvsCD.RDS")
+```
+
+```{r CD - Metabolites sPLSDA 6 Fine Tune}
+tune.splsda.controlvsCD =  readRDS(file = "tune.splsda.controlvsCD.RDS")
+error <- tune.splsda.controlvsCD$error.rate
+ncomp <- tune.splsda.controlvsCD$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp
+```
+
+```{r CD - Metabolites sPLSDA 7 Fine Tune}
+select.keepX <- tune.splsda.controlvsCD$choice.keepX[1:ncomp]  # optimal number of variables to select
+select.keepX
+```
+
+```{r CD - Metabolites sPLSDA 8}
+plot(tune.splsda.controlvsCD, col = color.jet(ncomp))
+```
+
+```{r CD - Metabolites sPLSDA 9 - fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.metabolites.final <- splsda(X_CD_metabolites_train, Y_CD_diagnosis_train, ncomp = ncomp, keepX = select.keepX)
+MyResult.splsda.metabolites.final
+
+plotIndiv (MyResult.splsda.metabolites.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.metabolites.final, ind.names = TRUE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r CD - Metabolites sPLSDA 10 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+pdf("plot_splsda_scores_metabolites_CD.pdf", width = 10, height = 8)
+plot_splsda_scores_metabolites <- plotIndiv (MyResult.splsda.metabolites.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_metabolites
+auc.plsda <- auroc (MyResult.splsda.metabolites.final)
+dev.off()
+```
+
+```{r CD - Metabolites sPLSDA 11 fig.width=8, fig.height=8, fig.fullwidth=TRUE, dpi = 350}
+setEPS()
+postscript("plot_splsda_scores_metabolites_CD.eps")
+plot_splsda_scores_metabolites <- plotIndiv (MyResult.splsda.metabolites.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+plot_splsda_scores_metabolites
+dev.off()
+```
+
+
+```{r CD - Metabolites sPLSDA 12 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_metabolites_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_metabolites <- plotIndiv (MyResult.splsda.metabolites.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+auc.plsda <- auroc (MyResult.splsda.metabolites.final)
+#plot_splsda_scores_metabolites
+dev.off()
+```
+
+
+```{r CD - Metabolites sPLSDA 13 Explained Variance}
+explained_variance(MyResult.splsda.metabolites.final$X, MyResult.splsda.metabolites.final$variates$X, ncomp=3)
+```
+
+```{r CD - Metabolites sPLSDA 14 AUC}
+auc.plsda <- auroc (MyResult.splsda.metabolites.final)
+
+selectVar(MyResult.splsda.metabolites.final, comp = 1)$value
+plotLoadings(MyResult.splsda.metabolites.final, comp = 1)
+
+selectVar(MyResult.splsda.metabolites.final, comp = 2)$value
+plotLoadings(MyResult.splsda.metabolites.final, comp = 2)
+
+selectVar(MyResult.splsda.metabolites.final, comp = 3)$value
+plotLoadings(MyResult.splsda.metabolites.final, comp = 3)
+```
+
+```{r CD - Metabolites sPLSDA 15 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_metabolites_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.metabolites.final)
+dev.off()
+```
+
+```{r CD - Metabolites sPLSDA 16}
+#plotLoadings(MyResult.splsda.metabolites.final, contrib = 'max', method = 'mean')
+```
+
+```{r CD - Metabolites sPLSDA 17 Loadings}
+loadings_1 <- selectVar(MyResult.splsda.metabolites.final, comp = 1)$name
+loadings_2 <- selectVar(MyResult.splsda.metabolites.final, comp = 2)$value
+loadings_3 <- selectVar(MyResult.splsda.metabolites.final, comp = 3)$value
+head (selectVar(MyResult.splsda.metabolites.final, comp=3)$name)  
+```
+
+```{r CD - Metabolites sPLSDA 18 Linn VIP}
+linn.vip_metabolites <- vip(MyResult.splsda.metabolites.final)
+length (linn.vip_metabolites)
+head(linn.vip_metabolites)
+```
+
+```{r CD - Metabolites sPLSDA 19 Variates}
+score_matrix_metabolites <- MyResult.splsda.metabolites.final$variates
+#head(score_matrix_metabolites)
+```
+
+```{r CD - Metabolites sPLSDA 20 Coefficients}
+coefficients_metabolites <- MyResult.splsda.metabolites.final[["mat.c"]]
+head(coefficients_metabolites)
+length (coefficients_metabolites)
+```
+
+```{r CD Metabolites sPLSDA 21 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1, file = "loadings_1_metabolites.xlsx")
+write.xlsx(loadings_2, file = "loadings_2_metabolites.xlsx")
+write.xlsx(loadings_3, file = "loadings_3_metabolites.xlsx")
+write.xlsx(linn.vip_metabolites, file = "linn.vip_metabolites.xlsx")
+write.xlsx(score_matrix_metabolites, file = "score_matrix_metabolites.xlsx")
+write.xlsx(coefficients_metabolites, file = "coefficients_metabolites.xlsx") 
+```
+
+```{r CD - Metabolites sPLSDA 22 Import Validation data Set}
+#VALIDATION DATA SET PERFORMANCE AND PREDICTION
+data_file <- "~/Desktop/IBD_article/X_CD_metabolites_validation.xlsx"
+if(file.exists(data_file)){
+    X_CD_metabolites_validation <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_metabolites_validation  Check the location of the file relative to your Rmd file.")
+}
+X_CD_metabolites_validation
+
+data_file <- "~/Desktop/IBD_article/Y_CD_diagnosis_validation.xlsx"
+if(file.exists(data_file)){
+    Y_CD_diagnosis_validation <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_validation Check the location of the file relative to your Rmd file.")
+}
+Y_CD_diagnosis_validation
+
+Y_CD_diagnosis_validation <- as_vector(Y_CD_diagnosis_validation)
+Y_CD_diagnosis_validation <- as_factor(Y_CD_diagnosis_validation)
+head (Y_CD_diagnosis_validation)
+class (Y_CD_diagnosis_validation)
+length(Y_CD_diagnosis_validation)
+```
+
+```{r CD - Metabolites sPLSDA 23 Prediction}
+splsda.metabolites.CD.predict <- predict (MyResult.splsda.metabolites.final, X_CD_metabolites_validation, dist = "max.dist")
+splsda.metabolites.CD.predict
+prediction.metabolites.CD <- splsda.metabolites.CD.predict$class$max.dist[,3]
+prediction.metabolites.CD
+```
+
+calculate the error rate of the model
+```{r CD - Metabolites sPLSDA 24 Error rate}
+confusion.mat.metabolites.CD = get.confusion_matrix(truth = Y_CD_diagnosis_validation, predicted = prediction.metabolites.CD)
+get.BER(confusion.mat.metabolites.CD)
+```
+
+# 1.3 CD - Microbiota - sPLSDA
+
+```{r CD - Microbiota sPLSDA 1}
+MyResult.splsda.microbiota <- splsda (X_CD_microbiota_train, Y_CD_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.microbiota, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPLS-DA microbiota on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.microbiota, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA microbiota on CD',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.microbiota)
+```
+
+```{r CD - Microbiota sPLSDA 2}
+selectVar(MyResult.splsda.microbiota, comp = 1)$value
+plotLoadings(MyResult.splsda.microbiota, comp = 1)
+
+selectVar(MyResult.splsda.microbiota, comp = 2)$value
+plotLoadings(MyResult.splsda.microbiota, comp = 2)
+
+selectVar(MyResult.splsda.microbiota, comp = 3)$value
+plotLoadings(MyResult.splsda.microbiota, comp = 3)
+```
+
+```{r CD - Microbiota sPLSDA 3}
+set.seed(80) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda.microbiota <- perf(MyResult.splsda.microbiota, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda.microbiota
+plot(MyPerf.splsda.microbiota, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r CD - Microbiota sPLSDA 4}
+#plotLoadings(MyResult.splsda.microbiota, contrib = 'max', method = 'mean')
+```
+
+```{r CD - Microbiota sPLSDA 5}
+list.keepX.microbiota <- c(1:10,  seq(10, 100, 10))
+list.keepX.microbiota # to output the grid of values tested
+```
+
+```{r CD - Microbiota sPLSDA 6 Fine Tune}
+set.seed(40) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsCD.microbiota <- tune.splsda(X_CD_microbiota_train, Y_CD_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX.microbiota, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+
+saveRDS(tune.splsda.controlvsCD.microbiota, file="tune.splsda.controlvsCD.microbiota.RDS")
+```
+
+```{r CD - Microbiota sPLSDA 7 Fine Tune}
+tune.splsda.controlvsCD.microbiota =  readRDS(file = "tune.splsda.controlvsCD.microbiota.RDS")
+error.microbiota <- tune.splsda.controlvsCD.microbiota$error.rate
+ncomp.microbiota <- tune.splsda.controlvsCD.microbiota$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp.microbiota
+```
+
+```{r CD - Microbiota sPLSDA 8 Fine Tune}
+select.keepX.microbiota <- tune.splsda.controlvsCD.microbiota$choice.keepX[1:2]  # optimal number of variables to select
+select.keepX.microbiota
+```
+
+Note: the optimize model is 1 component, but for visualization and regularization, we use two component model where the second component is a dummie variable 
+
+```{r CD - Microbiota sPLSDA 9}
+plot(tune.splsda.controlvsCD.microbiota, col = color.jet(3))
+```
+
+```{r Enzymes sPLSDA 10 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.microbiota.final <- splsda(X_CD_microbiota_train, Y_CD_diagnosis_train, ncomp = 2,keepX = select.keepX.microbiota)
+
+plotIndiv (MyResult.splsda.microbiota.final, legend = TRUE, title = 'sPLS-DA microbiota on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.microbiota.final, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA microbiota on CD-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r CD - Microbiota 11 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 700}
+pdf("plot_splsda_scores_microbiota_CD.pdf", width = 10, height = 8)
+plot_splsda_scores_microbiota_CD <- plotIndiv (MyResult.splsda.microbiota.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_microbiota_CD
+auc.plsda <- auroc (MyResult.splsda.microbiota.final)
+dev.off()
+```
+
+```{r CD - Microbiota sPLSDA 12 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_microbiota_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_microbiota_CD <- plotIndiv (MyResult.splsda.microbiota.final, legend = TRUE, title = 'sPLS-DA metabolites on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_microbiota_CD
+dev.off()
+```
+
+```{r CD - Microbiota sPLSDA 13 Explained Variance}
+explained_variance(MyResult.splsda.microbiota.final$X, MyResult.splsda.microbiota.final$variates$X, ncomp=2)
+```
+
+```{r CD - Microbiota sPLSDA 14 AUC}
+auc.plsda <- auroc (MyResult.splsda.microbiota.final)
+
+selectVar(MyResult.splsda.microbiota.final, comp = 1)$value
+plotLoadings(MyResult.splsda.microbiota.final, comp = 1)
+
+selectVar(MyResult.splsda.microbiota.final, comp = 2)$value
+plotLoadings(MyResult.splsda.microbiota.final, comp = 2)
+```
+
+```{r CD - Microbiota sPLSDA 15 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_microbiota_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.microbiota.final)
+dev.off()
+```
+
+```{r CD - Microbiota sPLSDA 16}
+#plotLoadings(MyResult.splsda.microbiota.final, contrib = 'max', method = 'mean')
+```
+
+```{r CD - Microbiota sPLSDA 17}
+loadings_1_microbiota <- selectVar(MyResult.splsda.microbiota.final, comp = 1)$name
+loadings_2_microbiota <- selectVar(MyResult.splsda.microbiota.final, comp = 2)$value
+head (selectVar(MyResult.splsda.microbiota.final, comp=1)$name)  
+```
+
+```{r CD - Microbiota sPLSDA 18}
+linn.vip_microbiota <- vip(MyResult.splsda.microbiota.final)
+length (linn.vip_microbiota)
+head(linn.vip_microbiota)
+```
+
+```{r CD - Microbiota sPLSDA 19 Scoring matrices}
+score_matrix_microbiota <- MyResult.splsda.microbiota.final$variates
+#head(score_matrix_microbiota)
+```
+
+```{r CD - Microbiota sPLSDA 20 Coefficients}
+coefficients_microbiota <- MyResult.splsda.microbiota.final[["mat.c"]]
+head(coefficients_microbiota)
+length (coefficients_microbiota)
+```
+
+```{r CD - Microbiota sPLSDA 21 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1_microbiota, file = "loadings_1_microbiota.xlsx")
+write.xlsx(loadings_2_microbiota, file = "loadings_2_microbiota.xlsx")
+write.xlsx(linn.vip_microbiota, file = "linn.vip_microbiota.xlsx")
+write.xlsx(score_matrix_microbiota, file = "score_matrix_microbiota.xlsx")
+write.xlsx(coefficients_metabolites, file = "coefficients_microbiota.xlsx") 
+```
+
+```{r CD - Microbiota sPLSDA 22 Importa Data Sets}
+# VALIDATION DATA SET
+data_file <- "~/Desktop/IBD_article/X_CD_microbiota_validation.xlsx"
+if(file.exists(data_file)){
+    X_CD_microbiota_validation <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_microbiota_validation  Check the location of the file relative to your Rmd file.")
+}
+X_CD_microbiota_validation
+Y_CD_diagnosis_validation
+head (Y_CD_diagnosis_validation)
+class (Y_CD_diagnosis_validation)
+length(Y_CD_diagnosis_validation)
+```
+
+```{r CD - Microbiota sPLSDA 23 Prediction}
+splsda.microbiota.CD.predict <- predict (MyResult.splsda.microbiota.final, X_CD_microbiota_validation, dist = "max.dist")
+splsda.microbiota.CD.predict
+prediction.microbiota.CD <- splsda.microbiota.CD.predict$class$max.dist[,2]
+prediction.microbiota.CD
+```
+
+```{r CD - Microbiota sPLSDA 24 Error Rate}
+confusion.mat.microbiota.CD = get.confusion_matrix(truth = Y_CD_diagnosis_validation, predicted = prediction.microbiota.CD)
+get.BER(confusion.mat.microbiota.CD)
+```
+
+# 1.4 CD - Enzymes - sPLSDA
+
+```{r CD - Enzymes sPLSDA 1}
+MyResult.splsda.enzymes <- splsda (X_CD_enzymes_train, Y_CD_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.enzymes, legend = TRUE, group = Y_CD_diagnosis_train, title = 'sPLS-DA enzymes on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.enzymes, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA enzymes on CD',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.enzymes)
+```
+
+```{r CD - Enzymes sPLSDA 2}
+selectVar(MyResult.splsda.enzymes, comp = 1)$value
+plotLoadings(MyResult.splsda.enzymes, comp = 1)
+
+selectVar(MyResult.splsda.enzymes, comp = 2)$value
+plotLoadings(MyResult.splsda.enzymes, comp = 2)
+
+selectVar(MyResult.splsda.enzymes, comp = 3)$value
+plotLoadings(MyResult.splsda.enzymes, comp = 3)
+```
+
+```{r CD - Enzymes sPLSDA 3}
+set.seed(90) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda.enzymes <- perf(MyResult.splsda.enzymes, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda.enzymes
+plot(MyPerf.splsda.enzymes, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r CD - Enzymes sPLSDA 4}
+#plotLoadings(MyResult.splsda.enzymes, contrib = 'max', method = 'mean')
+```
+
+```{r CD - Enzymes sPLSDA 5}
+list.keepX.enzymes <- c(1:10,  seq(10, 100, 10))
+list.keepX.enzymes # to output the grid of values tested
+```
+
+```{r CD - Enzymes sPLSDA 6 Fine tune}
+set.seed(40) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsCD.enzymes <- tune.splsda(X_CD_enzymes_train, Y_CD_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX.enzymes, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+saveRDS(tune.splsda.controlvsCD.enzymes, file="tune.splsda.controlvsCD.enzymes.RDS")
+```
+
+```{r CD - Enzymes sPLSDA 7 Fine tune}
+tune.splsda.controlvsCD.enzymes =  readRDS(file = "tune.splsda.controlvsCD.enzymes.RDS")
+error.enzymes <- tune.splsda.controlvsCD.enzymes$error.rate
+ncomp.enzymes <- tune.splsda.controlvsCD.enzymes$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp.enzymes
+```
+
+```{r CD - Enzymes sPLSDA 8 Fine tune}
+select.keepX.enzymes <- tune.splsda.controlvsCD.enzymes$choice.keepX[1:2]  # optimal number of variables to select
+select.keepX.enzymes
+```
+
+Note: the optimize model is 1 component, but for visualization and regularization, we use two component model where the second component is a dummie variable 
+
+```{r CD - Enzymes sPLSDA 9}
+plot(tune.splsda.controlvsCD.enzymes, col = color.jet(3))
+```
+
+```{r CD - Enzymes sPLSDA 10 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.enzymes.final <- splsda(X_CD_enzymes_train, Y_CD_diagnosis_train, ncomp = 2, keepX = select.keepX.enzymes)
+
+plotIndiv (MyResult.splsda.enzymes.final, legend = TRUE, title = 'sPLS-DA enzymes on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.enzymes.final, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA enzymes on CD-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r Enzymes sPLSDA 11 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+pdf("plot_splsda_scores_enzymes_CD.pdf", width = 10, height = 8)
+plot_splsda_scores_enzymes_CD <- plotIndiv (MyResult.splsda.enzymes.final, legend = TRUE, title = 'sPLS-DA enzymes on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_enzymes_CD
+auc.plsda <- auroc (MyResult.splsda.enzymes.final)
+dev.off()
+```
+
+```{r Enzymes sPLSDA 12 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_enzymes_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_enzymes_CD <- plotIndiv (MyResult.splsda.enzymes.final, legend = TRUE, title = 'sPLS-DA enzymes on CD-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_CD_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_enzymes_CD
+dev.off()
+```
+
+```{r Enzymes sPLSDA 13 Explained Variance}
+explained_variance(MyResult.splsda.enzymes.final$X, MyResult.splsda.enzymes.final$variates$Y, ncomp=2)
+```
+
+```{r Enzymes sPLSDA 14 AUC}
+auc.plsda <- auroc (MyResult.splsda.enzymes.final)
+
+selectVar(MyResult.splsda.enzymes.final, comp = 1)$value
+plotLoadings(MyResult.splsda.enzymes.final, comp = 1)
+
+selectVar(MyResult.splsda.enzymes.final, comp = 2)$value
+plotLoadings(MyResult.splsda.enzymes.final, comp = 2)
+```
+
+```{r Enzymes sPLSDA 15 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_enzymes_CD.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.enzymes.final)
+dev.off()
+```
+
+```{r Enzymes sPLSDA 16}
+#plotLoadings(MyResult.splsda.enzymes.final, contrib = 'max', method = 'mean')
+```
+
+```{r Enzymes sPLSDA 17 Loadings}
+loadings_1_enzymes <- selectVar(MyResult.splsda.enzymes.final, comp = 1)$name
+loadings_2_enzymes <- selectVar(MyResult.splsda.enzymes.final, comp = 2)$value
+head (selectVar(MyResult.splsda.enzymes.final, comp=1)$name)  
+```
+
+```{r Enzymes sPLSDA 18 Linn VIP}
+linn.vip_enzymes <- vip(MyResult.splsda.enzymes.final)
+length (linn.vip_enzymes)
+head(linn.vip_enzymes)
+```
+
+```{r Enzymes sPLSDA 19 Variates}
+score_matrix_enzymes <- MyResult.splsda.enzymes.final$variates
+#head(score_matrix_enzymes)
+```
+
+```{r Enzymes sPLSDA 20 Coefficients}
+coefficients_enzymes <- MyResult.splsda.enzymes.final[["mat.c"]]
+head(coefficients_enzymes)
+length (coefficients_enzymes)
+```
+
+```{r Enzymes sPLSDA 21 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1_enzymes, file = "loadings_1_enzymes.xlsx")
+write.xlsx(loadings_2_enzymes, file = "loadings_2_enzymes.xlsx")
+write.xlsx(linn.vip_enzymes, file = "linn.vip_enzymes.xlsx")
+write.xlsx(score_matrix_enzymes, file = "score_matrix_enzymes.xlsx")
+write.xlsx(coefficients_enzymes, file = "coefficients_enzymes.xlsx") 
+```
+
+NOTES:
+Weights: the weights describe the contribution of each variable to each LV. Number of the columns are equal to the number of LV, and the number of the rows for each variable.
+Scores: The scores describe the position of each sample in each determined latent variable (LV). Number of columns per each LV, and othe number of rows per each sample.
+
+
+```{r Enzymes sPLSDA 22 Import Data Sets}
+# VALIDATION DATA SET
+data_file <- "~/Desktop/IBD_article/X_CD_enzymes_validation.xlsx"
+if(file.exists(data_file)){
+    X_CD_enzymes_validation <- read_excel(path = data_file)
+} else {
+  print("X_CD_train_microbiota_validation  Check the location of the file relative to your Rmd file.")
+}
+X_CD_enzymes_validation
+Y_CD_diagnosis_validation
+head (Y_CD_diagnosis_validation)
+class (Y_CD_diagnosis_validation)
+length(Y_CD_diagnosis_validation)
+```
+
+```{r Enzymes sPLSDA 23 Prediction}
+splsda.enzymes.CD.predict <- predict (MyResult.splsda.enzymes.final, X_CD_enzymes_validation, dist = "max.dist")
+splsda.enzymes.CD.predict
+prediction.enzymes.CD <- splsda.enzymes.CD.predict$class$max.dist[,2]
+prediction.enzymes.CD
+```
+```{r Enzymes sPLSDA 24 Error rate}
+confusion.mat.enzymes.CD = get.confusion_matrix(truth = Y_CD_diagnosis_validation, predicted = prediction.enzymes.CD)
+get.BER(confusion.mat.enzymes.CD)
+```
+
+
+# 2. ULCERATIVE COLITIS
+
+
+```{r Data Import and Preprocessing}
+data_file <- "~/Desktop/IBD_article/X_UC_metabolites_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_metabolites_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_train_metabolites_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_metabolites_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_microbiota_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_microbiota_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_microbiota_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_microbiota_train
+
+data_file <- "~/Desktop/IBD_article/X_UC_enzymes_train.xlsx"
+if(file.exists(data_file)){
+    X_UC_enzymes_train <- read_excel(path = data_file)
+} else {
+  print("X_UC_enzymes_train  Check the location of the file relative to your Rmd file.")
+}
+X_UC_enzymes_train
+
+data_file <- "~/Desktop/IBD_article/Y_UC_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_UC_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_UC_diagnosis_train
+
+Y_UC_diagnosis_train <- as_vector(Y_UC_diagnosis_train)
+Y_UC_diagnosis_train <- as_factor(Y_UC_diagnosis_train)
+head (Y_UC_diagnosis_train)
+class (Y_UC_diagnosis_train)
+length(Y_UC_diagnosis_train)
+```
+
+# 2.1 UC - Metabolites Microbiota and Enzymes PCA and sPCA 
+
+```{r UC - Metabolites - PCA ans sPCA}
+tune.pca (X_UC_metabolites_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.metabolites.UC <- spca (X_UC_metabolites_train, ncomp = 3, center = TRUE, scale = FALSE)
+#plot (MyResult.spca.metabolites)
+MyResult.spca.metabolites.UC
+plotIndiv (MyResult.spca.metabolites.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPCA metabolites train on UC', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.metabolites.UC, comp = 1)$value
+plotLoadings(MyResult.spca.metabolites.UC, comp = 1)
+
+selectVar(MyResult.spca.metabolites.UC, comp = 2)$value
+plotLoadings(MyResult.spca.metabolites.UC, comp = 2)
+
+selectVar(MyResult.spca.metabolites.UC, comp = 3)$value
+plotLoadings(MyResult.spca.metabolites.UC, comp = 3)
+```
+
+```{r UC - Microbiota - PCA ans sPCA}
+tune.pca (X_UC_microbiota_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.microbiota.UC <- spca (X_UC_microbiota_train, ncomp = 3, center = TRUE, scale = FALSE)
+MyResult.spca.microbiota.UC
+plotIndiv (MyResult.spca.microbiota.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPCA microbiota train on UC', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.microbiota.UC, comp = 1)$value
+plotLoadings(MyResult.spca.microbiota.UC, comp = 1)
+
+selectVar(MyResult.spca.microbiota.UC, comp = 2)$value
+plotLoadings(MyResult.spca.microbiota.UC, comp = 2)
+
+selectVar(MyResult.spca.microbiota.UC, comp = 3)$value
+plotLoadings(MyResult.spca.microbiota.UC, comp = 3)
+```
+
+```{r UC - Enzymes - PCA ans sPCA}
+tune.pca (X_UC_enzymes_train, ncomp = 3, center = TRUE, scale = FALSE)
+
+MyResult.spca.enzymes.UC <- spca (X_UC_enzymes_train, ncomp = 3, center = TRUE, scale = FALSE)
+MyResult.spca.enzymes.UC
+plotIndiv (MyResult.spca.enzymes.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPCA enzymes train on UC', ind.names = FALSE, res.space = "XY-variate")
+
+selectVar(MyResult.spca.enzymes.UC, comp = 1)$value
+plotLoadings(MyResult.spca.enzymes.UC, comp = 1)
+
+selectVar(MyResult.spca.enzymes.UC, comp = 2)$value
+plotLoadings(MyResult.spca.enzymes.UC, comp = 2)
+
+selectVar(MyResult.spca.enzymes.UC, comp = 3)$value
+plotLoadings(MyResult.spca.enzymes.UC, comp = 3)
+```
+
+# 2.2 UC - Metabolites sPLSDA 
+
+```{r UC - Metabolites - sPLSDA 1}
+MyResult.splsda.metabolites.UC <- splsda (X_UC_metabolites_train, Y_UC_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.metabolites.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPLS-DA metabolites on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.metabolites.UC, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA metabolites on UC',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.metabolites.UC)
+```
+
+```{r UC - Metabolites - sPLSDA 2}
+selectVar(MyResult.splsda.metabolites.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.metabolites.UC, comp = 1)
+
+selectVar(MyResult.splsda.metabolites.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.metabolites.UC, comp = 2)
+
+selectVar(MyResult.splsda.metabolites.UC, comp = 3)$value
+plotLoadings(MyResult.splsda.metabolites.UC, comp = 3)
+```
+
+```{r UC - Metabolites - sPLSDA 3}
+set.seed(30) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda.UC <- perf(MyResult.splsda.metabolites.UC, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda.UC
+plot(MyPerf.splsda.UC, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r UC - Metabolites - sPLSDA 4}
+list.keepX.UC <- c(1:10,  seq(10, 100, 10))
+list.keepX.UC # to output the grid of values tested
+```
+
+```{r UC - Metabolites - sPLSDA 5 Fine Tune}
+set.seed(20) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsUC <- tune.splsda(X_UC_metabolites_train, Y_UC_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX.UC, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+saveRDS(tune.splsda.controlvsUC, file="tune.splsda.controlvsUC.RDS")
+```
+
+```{r UC - Metabolites - sPLSDA 6 Fine Tune}
+tune.splsda.controlvsUC =  readRDS(file = "tune.splsda.controlvsUC.RDS")
+error <- tune.splsda.controlvsUC$error.rate
+ncomp.UC <- tune.splsda.controlvsUC$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp.UC
+```
+
+```{r UC - Metabolites - sPLSDA 7 Fine Tune}
+select.keepX.UC <- tune.splsda.controlvsUC$choice.keepX[1:ncomp.UC]  # optimal number of variables to select
+select.keepX.UC
+```
+
+```{r UC - Metabolites - sPLSDA 8}
+plot(tune.splsda.controlvsUC, col = color.jet(3))
+```
+
+```{r UC - Metabolites - sPLSDA 9 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.metabolites.final.UC <- splsda(X_UC_metabolites_train, Y_UC_diagnosis_train, ncomp = ncomp.UC, keepX = select.keepX.UC)
+MyResult.splsda.metabolites.final.UC
+plotIndiv (MyResult.splsda.metabolites.final.UC, legend = TRUE, title = 'sPLS-DA metabolites on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.metabolites.final.UC, ind.names = TRUE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA metabolites on UC-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r UC - Metabolites - sPLSDA 10 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+pdf("plot_splsda_scores_metabolites_UC.pdf", width = 10, height = 8)
+plot_splsda_scores_metabolites_UC <- plotIndiv (MyResult.splsda.metabolites.final.UC, legend = TRUE, title = 'sPLS-DA metabolites on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_metabolites_UC
+auc.plsda <- auroc (MyResult.splsda.metabolites.final.UC)
+dev.off()
+```
+
+```{r UC - Metabolites - sPLSDA 11 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_metabolites_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_metabolites_UC <- plotIndiv (MyResult.splsda.metabolites.final.UC, legend = TRUE, title = 'sPLS-DA metabolites on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_metabolites_UC
+dev.off()
+```
+
+```{r UC - Metabolites - sPLSDA 12 Explained variance}
+explained_variance(MyResult.splsda.metabolites.final.UC$X, MyResult.splsda.metabolites.final.UC$variates$X, ncomp=2)
+```
+
+```{r UC - Metabolites - sPLSDA 13 AUC}
+auc.plsda <- auroc (MyResult.splsda.metabolites.final.UC)
+
+selectVar(MyResult.splsda.metabolites.final.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.metabolites.final.UC, comp = 1)
+
+selectVar(MyResult.splsda.metabolites.final.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.metabolites.final.UC, comp = 2)
+```
+
+```{r UC - Metabolites - sPLSDA 14 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_metabolites_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.metabolites.final.UC)
+dev.off()
+```
+
+```{r UC - Metabolites - sPLSDA 15}
+#plotLoadings(MyResult.splsda.metabolites.final.UC, contrib = 'max', method = 'mean')
+```
+
+```{r UC - Metabolites - sPLSDA 16 Loadings}
+loadings_1.UC <- selectVar(MyResult.splsda.metabolites.final.UC, comp = 1)$value
+loadings_2.UC <- selectVar(MyResult.splsda.metabolites.final.UC, comp = 2)$name
+head (selectVar(MyResult.splsda.metabolites.final.UC, comp=2)$name)  
+```
+
+```{r UC - Metabolites - sPLSDA 17 Linn VIP}
+linn.vip_metabolites.UC <- vip(MyResult.splsda.metabolites.final.UC)
+length (linn.vip_metabolites.UC)
+head(linn.vip_metabolites.UC)
+```
+
+```{r UC - Metabolites - sPLSDA 18 Variates}
+score_matrix_metabolites.UC <- MyResult.splsda.metabolites.final.UC$variates
+#head(score_matrix_metabolites.UC)
+```
+
+```{r UC - Metabolites - sPLSDA 19 Coefficients}
+coefficients_metabolites.UC <- MyResult.splsda.metabolites.final.UC[["mat.c"]]
+head(coefficients_metabolites.UC)
+length (coefficients_metabolites.UC)
+```
+
+```{r UC - Metabolites - sPLSDA 20 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1.UC, file = "loadings_1_metabolites.UC.xlsx")
+write.xlsx(loadings_2.UC, file = "loadings_2_metabolites.UC.xlsx")
+write.xlsx(linn.vip_metabolites.UC, file = "linn.vip_metabolites.UC.xlsx")
+write.xlsx(score_matrix_metabolites.UC, file = "score_matrix_metabolites.UC.xlsx")
+write.xlsx(coefficients_metabolites.UC, file = "coefficients_metabolites.UC.xlsx") 
+```
+
+```{r UC - Metabolites - sPLSDA 21 Import Data Sets}
+#VALIDATION DATA SET
+data_file <- "~/Desktop/IBD_article/X_UC_metabolites_validation.xlsx"
+if(file.exists(data_file)){
+    X_UC_metabolites_validation <- read_excel(path = data_file)
+} else {
+  print("X_UC_metabolites_validation  Check the location of the file relative to your Rmd file.")
+}
+X_UC_metabolites_validation
+data_file <- "~/Desktop/IBD_article/Y_UC_diagnosis_validation.xlsx"
+if(file.exists(data_file)){
+    Y_UC_diagnosis_validation <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_UC_diagnosis_validation Check the location of the file relative to your Rmd file.")
+}
+Y_UC_diagnosis_validation
+Y_UC_diagnosis_validation <- as_vector(Y_UC_diagnosis_validation)
+Y_UC_diagnosis_validation <- as_factor(Y_UC_diagnosis_validation)
+head (Y_UC_diagnosis_validation)
+class (Y_UC_diagnosis_validation)
+length(Y_UC_diagnosis_validation)
+```
+
+```{r UC - Metabolites - sPLSDA 22 Predict}
+splsda.metabolites.UC.predict <- predict (MyResult.splsda.metabolites.final.UC, X_UC_metabolites_validation, dist = "max.dist")
+splsda.metabolites.UC.predict
+prediction.metabolites.UC <- splsda.metabolites.UC.predict$class$max.dist[,2]
+prediction.metabolites.UC
+```
+
+```{r UC - Metabolites - sPLSDA 23 Error rate}
+confusion.mat.metabolites.UC = get.confusion_matrix(truth = Y_UC_diagnosis_validation, predicted = prediction.metabolites.UC)
+get.BER(confusion.mat.metabolites.UC)
+```
+
+# 2.3 UC - Microbiota sPLSDA 
+
+```{r UC - Microbiota - sPLSDA 1}
+MyResult.splsda.microbiota.UC <- splsda (X_UC_microbiota_train, Y_UC_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.microbiota.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPLS-DA microbiota on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.microbiota.UC, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA microbiota on UC',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.microbiota.UC)
+```
+```{r UC - Microbiota - sPLSDA 3}
+selectVar(MyResult.splsda.microbiota.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.microbiota.UC, comp = 1)
+
+selectVar(MyResult.splsda.microbiota.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.microbiota.UC, comp = 2)
+
+selectVar(MyResult.splsda.microbiota.UC, comp = 3)$value
+plotLoadings(MyResult.splsda.microbiota.UC, comp = 3)
+```
+
+```{r UC - Microbiota - sPLSDA 4}
+set.seed(80) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda.microbiota.UC <- perf(MyResult.splsda.microbiota.UC, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda.microbiota.UC
+plot(MyPerf.splsda.microbiota.UC, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r UC - Microbiota - sPLSDA 5}
+#plotLoadings(MyResult.splsda.microbiota.UC, contrib = 'max', method = 'mean')
+```
+
+```{r UC - Microbiota - sPLSDA 6}
+list.keepX.microbiota.UC <- c(1:10,  seq(10, 100, 10))
+list.keepX.microbiota.UC # to output the grid of values tested
+```
+
+```{r UC - Microbiota - sPLSDA 7 Fine Tune}
+set.seed(75) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsUC.microbiota <- tune.splsda(X_UC_microbiota_train, Y_UC_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX.microbiota.UC, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+saveRDS(tune.splsda.controlvsUC.microbiota, file="tune.splsda.controlvsUC.microbiota.RDS")
+```
+
+```{r UC - Microbiota - sPLSDA 8 Fine Tune}
+tune.splsda.controlvsUC.microbiota =  readRDS(file = "tune.splsda.controlvsUC.microbiota.RDS")
+error.microbiota.UC <- tune.splsda.controlvsUC.microbiota$error.rate
+ncomp.microbiota.UC <- tune.splsda.controlvsUC.microbiota$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp.microbiota.UC
+```
+
+```{r UC - Microbiota - sPLSDA 9 Fine Tune}
+select.keepX.microbiota.UC <- tune.splsda.controlvsUC.microbiota$choice.keepX[1:2]  # optimal number of variables to select
+select.keepX.microbiota.UC
+```
+
+Note: the optimize model is 1 component, but for visualization and regularization, we use two component model where the second component is a dummie variable 
+
+```{r UC - Microbiota - sPLSDA 10}
+plot(tune.splsda.controlvsUC.microbiota, col = color.jet(3))
+```
+
+```{r UC - Microbiota - sPLSDA 11 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.microbiota.final.UC <- splsda(X_UC_microbiota_train, Y_UC_diagnosis_train, ncomp = 2, keepX = select.keepX.microbiota.UC)
+
+plotIndiv (MyResult.splsda.microbiota.final.UC, legend = TRUE, title = 'sPLS-DA microbiota on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.microbiota.final.UC, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA microbiota on UC-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r UC - Microbiota - sPLSDA 12 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+pdf("plot_splsda_scores_microbiota_UC.pdf", width = 10, height = 8)
+plot_splsda_scores_microbiota_UC <- plotIndiv (MyResult.splsda.microbiota.final.UC, legend = TRUE, title = 'sPLS-DA microbiota on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_microbiota_UC
+auc.plsda <- auroc (MyResult.splsda.microbiota.final.UC)
+dev.off()
+```
+
+```{r UC - Microbiota - sPLSDA 13 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_microbiota_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_microbiota_UC <- plotIndiv (MyResult.splsda.microbiota.final.UC, legend = TRUE, title = 'sPLS-DA microbiota on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_metabolites_UC
+dev.off()
+```
+
+```{r UC - Microbiota - sPLSDA 14 Explained Variance}
+explained_variance(MyResult.splsda.microbiota.final.UC$X, MyResult.splsda.microbiota.final.UC$variates$Y, ncomp=2)
+```
+
+```{r UC - Microbiota - sPLSDA 15 AUC}
+auc.plsda <- auroc (MyResult.splsda.microbiota.final.UC)
+
+selectVar(MyResult.splsda.microbiota.final.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.microbiota.final.UC, comp = 1)
+
+selectVar(MyResult.splsda.microbiota.final.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.microbiota.final.UC, comp = 2)
+
+```
+
+```{r UC - Microbiota - sPLSDA 16 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_microbiota_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.microbiota.final.UC)
+dev.off()
+```
+
+```{r UC - Microbiota - sPLSDA 17}
+#plotLoadings(MyResult.splsda.microbiota.final.UC, contrib = 'max', method = 'mean')
+```
+
+```{r UC - Microbiota - sPLSDA 18 Loadings}
+loadings_1_microbiota.UC <- selectVar(MyResult.splsda.microbiota.final.UC, comp = 1)$name
+loadings_2_microbiota.UC <- selectVar(MyResult.splsda.microbiota.final.UC, comp = 2)$name
+head (selectVar(MyResult.splsda.microbiota.final.UC, comp=1)$name)  
+```
+
+```{r UC - Microbiota - sPLSDA 19 Linn VIP}
+linn.vip_microbiota.UC <- vip(MyResult.splsda.microbiota.final.UC)
+length (linn.vip_microbiota.UC)
+head(linn.vip_microbiota.UC)
+```
+
+```{r UC - Microbiota - sPLSDA 20 Variates}
+score_matrix_microbiota.UC <- MyResult.splsda.microbiota.final.UC$variates
+#head(score_matrix_microbiota.UC)
+```
+
+```{r UC - Microbiota - sPLSDA 21 Coefficients}
+coefficients_microbiota.UC <- MyResult.splsda.microbiota.final.UC[["mat.c"]]
+head(coefficients_microbiota.UC)
+length (coefficients_microbiota.UC)
+```
+
+```{r UC - Microbiota - sPLSDA 22 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1_microbiota.UC, file = "loadings_1_microbiota.UC.xlsx")
+write.xlsx(loadings_2_microbiota.UC, file = "loadings_2_microbiota.UC.xlsx")
+write.xlsx(linn.vip_microbiota.UC, file = "linn.vip_microbiota.UC.xlsx")
+write.xlsx(score_matrix_microbiota.UC, file = "score_matrix_microbiota.UC.xlsx")
+write.xlsx(coefficients_metabolites.UC, file = "coefficients_microbiota.UC.xlsx") 
+```
+
+```{r UC - Microbiota - sPLSDA 23 Import Data Sets}
+#VALIDATION DATA SETS
+data_file <- "~/Desktop/IBD_article/X_UC_microbiota_validation.xlsx"
+if(file.exists(data_file)){
+    X_UC_microbiota_validation <- read_excel(path = data_file)
+} else {
+  print("X_UC_microbiota_validation  Check the location of the file relative to your Rmd file.")
+}
+X_UC_microbiota_validation
+Y_UC_diagnosis_validation
+head (Y_UC_diagnosis_validation)
+class (Y_UC_diagnosis_validation)
+length(Y_UC_diagnosis_validation)
+```
+
+```{r UC - Microbiota - sPLSDA 24 Predict}
+splsda.microbiota.UC.predict <- predict (MyResult.splsda.microbiota.final.UC, X_UC_microbiota_validation, dist = "max.dist")
+splsda.microbiota.UC.predict
+prediction.microbiota.UC <- splsda.microbiota.UC.predict$class$max.dist[,2]
+prediction.microbiota.UC
+```
+
+```{r UC - Microbiota - sPLSDA 25 Error rate}
+confusion.mat.microbiota.UC = get.confusion_matrix(truth = Y_UC_diagnosis_validation, predicted = prediction.microbiota.UC)
+get.BER(confusion.mat.microbiota.UC)
+```
+
+# 2.4 UC - Enzymes sPLSDA 
+
+```{r UC - Enzymes - sPLSDA 1}
+MyResult.splsda.enzymes.UC <- splsda (X_UC_enzymes_train, Y_UC_diagnosis_train, ncomp=3)
+plotIndiv (MyResult.splsda.enzymes.UC, legend = TRUE, group = Y_UC_diagnosis_train, title = 'sPLS-DA enzymes on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate")
+
+plotIndiv(MyResult.splsda.enzymes.UC, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA enzymes on UC',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+
+auc.plsda <- auroc (MyResult.splsda.enzymes.UC)
+```
+
+```{r UC - Enzymes - sPLSDA 2}
+selectVar(MyResult.splsda.enzymes.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.enzymes.UC, comp = 1)
+
+selectVar(MyResult.splsda.enzymes.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.enzymes.UC, comp = 2)
+
+selectVar(MyResult.splsda.enzymes.UC, comp = 3)$value
+plotLoadings(MyResult.splsda.enzymes.UC, comp = 3)
+```
+
+```{r UC - Enzymes - sPLSDA 3}
+set.seed(95) # for reproducbility in this vignette, otherwise increase nrepeat
+MyPerf.splsda.enzymes.UC <- perf(MyResult.splsda.enzymes.UC, validation = "Mfold", folds = 3, 
+                  progressBar = FALSE, nrepeat = 10) # we suggest nrepeat = 50
+MyPerf.splsda.enzymes.UC
+plot(MyPerf.splsda.enzymes.UC, col = color.mixo(5:7), sd = TRUE, legend.position = "horizontal")
+```
+
+```{r UC - Enzymes - sPLSDA 4}
+#plotLoadings(MyResult.splsda.enzymes, contrib = 'max', method = 'mean')
+```
+
+```{r UC - Enzymes - sPLSDA 5}
+list.keepX.enzymes.UC <- c(1:10,  seq(10, 100, 10))
+list.keepX.enzymes.UC # to output the grid of values tested
+```
+
+```{r UC - Enzymes - sPLSDA 6}
+set.seed(20) # for reproducbility in this vignette, otherwise increase nrepeat
+tune.splsda.controlvsUC.enzymes <- tune.splsda(X_UC_enzymes_train, Y_UC_diagnosis_train, ncomp = 3, # we suggest, e.g. 4
+                                validation = 'Mfold',folds = 3, dist = 'max.dist', progressBar = TRUE,
+                                measure = "BER", test.keepX = list.keepX.enzymes.UC, nrepeat = 25, cpus = 2)   # suggest nrepeat = 50
+saveRDS(tune.splsda.controlvsUC.enzymes, file="tune.splsda.controlvsUC.enzymes.RDS")
+```
+
+```{r UC - Enzymes - sPLSDA 7}
+tune.splsda.controlvsUC.enzymes =  readRDS(file = "tune.splsda.controlvsUC.enzymes.RDS")
+error.enzymes.UC <- tune.splsda.controlvsUC.enzymes$error.rate
+ncomp.enzymes.UC <- tune.splsda.controlvsUC.enzymes$choice.ncomp$ncomp # optimal number of components based on t-tests on the error rate
+ncomp.enzymes.UC
+```
+
+```{r UC - Enzymes - sPLSDA 8}
+select.keepX.enzymes.UC <- tune.splsda.controlvsUC.enzymes$choice.keepX[1:2]  # optimal number of variables to select
+select.keepX.enzymes.UC
+```
+
+Note: the optimize model is 1 component, but for visualization and regularization, we use two component model where the second component is a dummie variable 
+
+```{r UC - Enzymes - sPLSDA 9}
+plot(tune.splsda.controlvsUC.enzymes, col = color.jet(3))
+```
+
+```{r UC - Enzymes - sPLSDA 10 fig.width=8, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+MyResult.splsda.enzymes.final.UC <- splsda(X_UC_enzymes_train, Y_UC_diagnosis_train, ncomp = 2, keepX = select.keepX.enzymes.UC)
+
+plotIndiv (MyResult.splsda.enzymes.final.UC, legend = TRUE, title = 'sPLS-DA enzymes on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+
+plotIndiv(MyResult.splsda.enzymes.final.UC, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA enzymes on UC-Diagnosis',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+```
+
+```{r UC - Enzymes - sPLSDA 11 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+pdf("plot_splsda_scores_enzymes_UC.pdf", width = 10, height = 8)
+plot_splsda_scores_enzymes_UC <- plotIndiv (MyResult.splsda.enzymes.final.UC, legend = TRUE, title = 'sPLS-DA enzymes on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_enzymes_UC
+auc.plsda <- auroc (MyResult.splsda.enzymes.final.UC)
+dev.off()
+```
+
+```{r UC - Enzymes - sPLSDA 12 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_scores_enzymes_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+plot_splsda_scores_enzymes_UC <- plotIndiv (MyResult.splsda.enzymes.final.UC, legend = TRUE, title = 'sPLS-DA enzymes on UC-Diagnosis', ind.names = FALSE, res.space = "XY-variate", group = Y_UC_diagnosis_train, ellipse = TRUE)
+#plot_splsda_scores_enzymes_UC
+dev.off()
+```
+
+```{r UC - Enzymes - sPLSDA 13 Explained variance}
+explained_variance(MyResult.splsda.enzymes.final.UC$X, MyResult.splsda.enzymes.final.UC$variates$X, ncomp=2)
+```
+
+```{r UC - Enzymes - sPLSDA 14 AUC}
+auc.plsda <- auroc (MyResult.splsda.enzymes.final.UC)
+
+selectVar(MyResult.splsda.enzymes.final.UC, comp = 1)$value
+plotLoadings(MyResult.splsda.enzymes.final.UC, comp = 1)
+
+selectVar(MyResult.splsda.enzymes.final.UC, comp = 2)$value
+plotLoadings(MyResult.splsda.enzymes.final.UC, comp = 2)
+```
+
+```{r UC - Enzymes - sPLSDA 15 fig.width=20, fig.height=6, fig.fullwidth=TRUE, dpi = 350}
+tiff("plot_splsda_auroc.splsda_enzymes_UC.tiff", units = "in", width = 10, height = 8, res= 900)
+auc.plsda <- auroc (MyResult.splsda.enzymes.final.UC)
+dev.off()
+```
+
+```{r UC - Enzymes - sPLSDA 16}
+#plotLoadings(MyResult.splsda.enzymes.final.UC, contrib = 'max', method = 'mean')
+```
+
+```{r UC - Enzymes - sPLSDA 17 Loadings}
+loadings_1_enzymes.UC <- selectVar(MyResult.splsda.enzymes.final.UC, comp = 1)$name
+loadings_2_enzymes.UC <- selectVar(MyResult.splsda.enzymes.final.UC, comp = 2)$name
+head (selectVar(MyResult.splsda.enzymes.final.UC, comp=1)$name)  
+```
+
+```{r UC - Enzymes - sPLSDA 18 Linn VIPP}
+linn.vip_enzymes.UC <- vip(MyResult.splsda.enzymes.final.UC)
+length (linn.vip_enzymes.UC)
+head(linn.vip_enzymes.UC)
+```
+
+```{r UC - Enzymes - sPLSDA 19 Variates}
+score_matrix_enzymes.UC <- MyResult.splsda.enzymes.final.UC$variates
+#head(score_matrix_enzymes.UC)
+```
+
+```{r UC - Enzymes - sPLSDA 20 Coefficients}
+coefficients_enzymes.UC <- MyResult.splsda.enzymes.final.UC[["mat.c"]]
+head(coefficients_enzymes.UC)
+length (coefficients_enzymes.UC)
+```
+
+```{r UC - Enzymes - sPLSDA 21 Printing Loadings Coefficients Scores VIP}
+library (openxlsx)
+write.xlsx(loadings_1_enzymes.UC, file = "loadings_1_enzymes.UC.xlsx")
+write.xlsx(loadings_2_enzymes.UC, file = "loadings_2_enzymes.UC.xlsx")
+write.xlsx(linn.vip_enzymes.UC, file = "linn.vip_enzymes.UC.xlsx")
+write.xlsx(score_matrix_enzymes.UC, file = "score_matrix_enzymes.UC.xlsx")
+write.xlsx(coefficients_enzymes.UC, file = "coefficients_enzymes.UC.xlsx") 
+```
+
+```{r UC - Enzymes - sPLSDA 22 Data Import}
+#VALIDATION DATA SET
+data_file <- "~/Desktop/IBD_article/X_UC_enzymes_validation.xlsx"
+if(file.exists(data_file)){
+    X_UC_enzymes_validation <- read_excel(path = data_file)
+} else {
+  print("X_UC_metabolites_validation  Check the location of the file relative to your Rmd file.")
+}
+X_UC_enzymes_validation
+Y_UC_diagnosis_validation
+head (Y_UC_diagnosis_validation)
+class (Y_UC_diagnosis_validation)
+length(Y_UC_diagnosis_validation)
+```
+
+```{r UC - Enzymes - sPLSDA 24 Predict}
+splsda.enzymes.UC.predict <- predict (MyResult.splsda.enzymes.final.UC, X_UC_enzymes_validation, dist = "max.dist")
+splsda.enzymes.UC.predict
+prediction.enzymes.UC <- splsda.enzymes.UC.predict$class$max.dist[,2]
+prediction.enzymes.UC
+```
+
+```{r UC - Enzymes - sPLSDA 25 Error rate}
+confusion.mat.enzymes.UC = get.confusion_matrix(truth = Y_UC_diagnosis_validation, predicted = prediction.enzymes.UC)
+get.BER(confusion.mat.enzymes.UC)
+```
+
+# 3. OUTCOMES
+
+# 3.1 CD Matrices and Figures
+
+```{r Data Import and Preprocessing}
+data_file <- "~/Desktop/IBD_article/Y_CD_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_CD_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_CD_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_CD_diagnosis_train
+comp_regression_metab <- score_matrix_metabolites$X
+comp_regression_microb <- score_matrix_microbiota$X
+comp_regression_enzymes <- score_matrix_enzymes$X
+CD_regression_comp <- Y_CD_diagnosis_train %>% cbind(comp_regression_metab, comp_regression_microb, comp_regression_enzymes)
+colnames(CD_regression_comp) <- c("Diagnosis", "q1_metab", "q2_metab", "q3_metab", "q1_microb", "q2_microb", "q1_enzymes", "q2_enzymes")
+CD_regression_comp
+CD_regression_comp <- CD_regression_comp %>% mutate (Diagnosis_regression = "1") %>% mutate (Diagnosis_regression = replace (Diagnosis_regression, Diagnosis =="Control", 0))
+CD_regression_comp
+write.xlsx(CD_regression_comp, file = "CD_regression_comp.xlsx") 
+```
+
+```{r CD -  Metabolites VIP and SPARSE Regularization}
+sparse.metabolites.1 <- as.tibble (selectVar(MyResult.splsda.metabolites.final, comp = 1)$name)
+sparse.metabolites.2 <- as.tibble (selectVar(MyResult.splsda.metabolites.final, comp = 2)$name)
+sparse.metabolites.3 <- as.tibble (selectVar(MyResult.splsda.metabolites.final, comp = 3)$name)
+```
+
+```{r CD - Metabolites Linn VIP}
+linn.vip_metabolites <- as.data.frame(vip (MyResult.splsda.metabolites.final))
+linn.vip_metabolites_column <- colnames (X_CD_metabolites_train)
+linn.vip_metabolites <- linn.vip_metabolites %>% mutate (features = linn.vip_metabolites_column, .before=comp1)
+linn.vip_metabolites
+vip.metabolites.1 <- (linn.vip_metabolites %>% filter (comp1 >1))
+vip.metabolites.2 <- (linn.vip_metabolites %>% filter (comp2 >1))
+vip.metabolites.3 <- (linn.vip_metabolites %>% filter (comp3 >1))
+```
+
+```{r CD -  Microbiota VIP and SPARSE Regularization}
+sparse.microbiota.1 <- as.tibble (selectVar(MyResult.splsda.microbiota.final, comp = 1)$name)
+sparse.microbiota.2 <- as.tibble (selectVar(MyResult.splsda.microbiota.final, comp = 2)$name)
+```
+
+```{r CD -  Metabolites Linn VIP}
+linn.vip_microbiota <- as.data.frame (vip (MyResult.splsda.microbiota.final))
+linn.vip_microbiota_column <- colnames (X_CD_microbiota_train)
+linn.vip_microbiota <- linn.vip_microbiota %>% mutate (features = linn.vip_microbiota_column, .before=comp1)
+linn.vip_microbiota
+vip.microbiota.1 <- (linn.vip_microbiota %>% filter (comp1 >1))
+vip.microbiota.2 <- (linn.vip_microbiota %>% filter (comp2 >1))
+```
+
+```{r CD  - Enzymes VIP and SPARSE Regularization}
+sparse.enzymes.1 <- as.tibble (selectVar(MyResult.splsda.enzymes.final, comp = 1)$name)
+sparse.enzymes.2 <- as.tibble (selectVar(MyResult.splsda.enzymes.final, comp = 2)$name)
+```
+
+```{r CD - Enzymes Linn VIP}
+linn.vip_enzymes <- as.data.frame (vip (MyResult.splsda.enzymes.final))
+linn.vip_enzymes_column <- colnames (X_CD_enzymes_train)
+linn.vip_enzymes <- linn.vip_enzymes %>% mutate (features = linn.vip_enzymes_column, .before=comp1)
+linn.vip_enzymes
+vip.enzymes.1 <- (linn.vip_enzymes %>% filter (comp1 >1))
+vip.enzymes.2 <- (linn.vip_enzymes %>% filter (comp2 >1))
+```
+
+```{r CD - Outcomes Printing Matrices}
+write.xlsx(linn.vip_metabolites, file = "linn.vip.metabolites.xlsx")
+write.xlsx(linn.vip_microbiota, file = "linn.vip.microbiota.xlsx")
+write.xlsx(linn.vip_enzymes, file = "linn.vip.enzymes.xlsx")
+
+write.xlsx(sparse.metabolites.1, file = "sparse.metabolites.1.xlsx")
+write.xlsx(sparse.metabolites.2, file = "sparse.metabolites.2.xlsx")
+write.xlsx(sparse.metabolites.3, file = "sparse.metabolites.3.xlsx")
+write.xlsx(sparse.microbiota.1, file = "sparse.microbiota.1.xlsx")
+write.xlsx(sparse.microbiota.2, file = "sparse.microbiota.2.xlsx")
+write.xlsx(sparse.enzymes.1, file = "sparse.enzymes.1.xlsx") 
+write.xlsx(sparse.enzymes.2, file = "sparse.enzymes.2.xlsx") 
+
+write.xlsx(vip.metabolites.1, file = "vip.metabolites.1.xlsx")
+write.xlsx(vip.metabolites.2, file = "vip.metabolites.2.xlsx")
+write.xlsx(vip.metabolites.3, file = "vip.metabolites.3.xlsx")
+write.xlsx(vip.microbiota.1, file = "vip.microbiota.1.xlsx")
+write.xlsx(vip.microbiota.2, file = "vip.microbiota.2.xlsx")
+write.xlsx(vip.enzymes.1, file = "vip.enzymes.1.xlsx") 
+write.xlsx(vip.enzymes.2, file = "vip.enzymes.2.xlsx") 
+```
+
+```{r CD - Variates Metabolites Microbiota and Enzymes}
+variates.X.metabolites.CD <- MyResult.splsda.metabolites.final$variates
+variates.X.microbiota.CD <- MyResult.splsda.microbiota.final$variates
+variates.X.enzymes.CD <- MyResult.splsda.enzymes.final$variates
+Y_CD_diagnosis_train
+
+variates.X.metabolites.CD <- as.data.frame (variates.X.metabolites.CD) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_CD_diagnosis_train)  
+variates.X.metabolites.CD$Diagnosis <- as.factor(variates.X.metabolites.CD$Diagnosis)
+variates.X.metabolites.CD
+
+variates.X.microbiota.CD <- as.data.frame (variates.X.microbiota.CD) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_CD_diagnosis_train)  
+variates.X.microbiota.CD$Diagnosis <- as.factor(variates.X.microbiota.CD$Diagnosis)
+variates.X.microbiota.CD
+
+variates.X.enzymes.CD <- as.data.frame (variates.X.enzymes.CD) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_CD_diagnosis_train)  
+variates.X.enzymes.CD$Diagnosis <- as.factor(variates.X.enzymes.CD$Diagnosis)
+variates.X.enzymes.CD
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+CD.metabolites.plot.scores <- ggplot(variates.X.metabolites.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.metabolites.plot.scores
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("CD.metabolites.plot.scores.pdf", width = 10, height = 8)
+CD.metabolites.plot.scores <- ggplot(variates.X.metabolites.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.metabolites.plot.scores
+auc.plsda <- auroc (MyResult.splsda.metabolites.final)
+dev.off()
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+CD.microbiota.plot.scores <- ggplot(variates.X.microbiota.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.microbiota.plot.scores
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("CD.microbiota.plot.scores.pdf", width = 10, height = 8)
+CD.microbiota.plot.scores <- ggplot(variates.X.microbiota.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.microbiota.plot.scores
+auc.plsda <- auroc (MyResult.splsda.microbiota.final)
+dev.off()
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+CD.enzymes.plot.scores <- ggplot(variates.X.enzymes.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.enzymes.plot.scores
+```
+
+```{r ffig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("CD.enzymes.plot.scores.pdf", width = 10, height = 8)
+CD.enzymes.plot.scores <- ggplot(variates.X.enzymes.CD, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(18,19)) +scale_color_manual(values = c("coral2", 'cornflowerblue'))
+CD.enzymes.plot.scores
+auc.plsda <- auroc (MyResult.splsda.enzymes.final)
+dev.off()
+```
+
+# 3.2 UC Matrices and Figures
+
+```{r Data Import and Preprocessing}
+data_file <- "~/Desktop/IBD_article/Y_UC_diagnosis_train.xlsx"
+if(file.exists(data_file)){
+    Y_UC_diagnosis_train <- read_excel(path = data_file, col_names = "Diagnosis")
+} else {
+  print("Y_UC_diagnosis_train Check the location of the file relative to your Rmd file.")
+}
+Y_UC_diagnosis_train
+comp_regression_metab.UC <- score_matrix_metabolites.UC$X
+comp_regression_microb.UC <- score_matrix_microbiota.UC$X
+comp_regression_enzymes.UC <- score_matrix_enzymes.UC$X
+UC_regression_comp <- Y_UC_diagnosis_train %>% cbind(comp_regression_metab.UC, comp_regression_microb.UC, comp_regression_enzymes.UC)
+colnames(UC_regression_comp) <- c("Diagnosis", "q1_metab", "q2_metab", "q1_microb", "q2_microb", "q1_enzymes", "q2_enzymes")
+UC_regression_comp
+UC_regression_comp <- UC_regression_comp %>% mutate (Diagnosis_regression = "1") %>% mutate (Diagnosis_regression = replace (Diagnosis_regression, Diagnosis =="Control", 0))
+UC_regression_comp
+write.xlsx(UC_regression_comp, file = "UC_regression_comp.xlsx") 
+```
+
+```{r UC - Metabolites - VIP and SPARSE Regularization}
+sparse.metabolites.1.UC <- as.tibble (selectVar(MyResult.splsda.metabolites.final.UC, comp = 1)$name)
+sparse.metabolites.2.UC <- as.tibble (selectVar(MyResult.splsda.metabolites.final.UC, comp = 2)$name)
+sparse.metabolites.1.UC
+sparse.metabolites.2.UC
+```
+
+```{r Metabolites Linn VIP}
+linn.vip_metabolites.UC <- as.data.frame (vip (MyResult.splsda.metabolites.final.UC))
+linn.vip_metabolites_column.UC <- colnames (X_UC_metabolites_train)
+linn.vip_metabolites.UC <- linn.vip_metabolites.UC %>% mutate (features = linn.vip_metabolites_column.UC, .before=comp1)
+linn.vip_metabolites.UC
+vip.metabolites.1.UC <- (linn.vip_metabolites.UC %>% filter (comp1 >1))
+vip.metabolites.2.UC <- (linn.vip_metabolites.UC %>% filter (comp2 >1))
+vip.metabolites.1.UC
+vip.metabolites.2.UC
+```
+
+```{r UC - Microbiota - VIP and SPARSE Regularization}
+sparse.microbiota.1.UC <- as.tibble (selectVar(MyResult.splsda.microbiota.final.UC, comp = 1)$name)
+sparse.microbiota.2.UC <- as.tibble (selectVar(MyResult.splsda.microbiota.final.UC, comp = 2)$name)
+sparse.microbiota.1.UC
+sparse.microbiota.2.UC
+```
+
+```{r Microbiota Linn VIP}
+linn.vip_microbiota.UC <- as.data.frame (vip (MyResult.splsda.microbiota.final.UC))
+linn.vip_microbiota_column.UC <- colnames (X_UC_microbiota_train)
+linn.vip_microbiota.UC <- linn.vip_microbiota.UC %>% mutate (features = linn.vip_microbiota_column.UC, .before=comp1)
+linn.vip_microbiota.UC
+vip.microbiota.1.UC <- (linn.vip_microbiota.UC %>% filter (comp1 >1))
+vip.microbiota.1.UC
+vip.microbiota.2.UC <- (linn.vip_microbiota.UC %>% filter (comp2 >1))
+vip.microbiota.2.UC
+```
+
+```{r UC - Enzymes - VIP and SPARSE Regularization}
+sparse.enzymes.1.UC <- as.tibble (selectVar(MyResult.splsda.enzymes.final.UC, comp = 1)$name)
+sparse.enzymes.2.UC <- as.tibble (selectVar(MyResult.splsda.enzymes.final.UC, comp = 2)$name)
+sparse.enzymes.1.UC
+sparse.enzymes.2.UC
+```
+
+```{r Enzymes Linn VIP}
+linn.vip_enzymes.UC <- as.data.frame (vip (MyResult.splsda.enzymes.final.UC))
+linn.vip_enzymes_column.UC <- colnames (X_UC_enzymes_train)
+linn.vip_enzymes.UC <- linn.vip_enzymes.UC %>% mutate (features = linn.vip_enzymes_column.UC, .before=comp1)
+linn.vip_enzymes.UC
+vip.enzymes.1.UC <- (linn.vip_enzymes.UC %>% filter (comp1 >1))
+vip.enzymes.1.UC
+vip.enzymes.2.UC <- (linn.vip_enzymes.UC %>% filter (comp2 >1))
+vip.enzymes.2.UC
+```
+
+```{r UC - Outcomes Printing Matrices}
+write.xlsx(linn.vip_metabolites.UC, file = "linn.vip.metabolites.UC.xlsx")
+write.xlsx(linn.vip_microbiota.UC, file = "linn.vip.microbiota.UC.xlsx")
+write.xlsx(linn.vip_enzymes.UC, file = "linn.vip.enzymes.UC.xlsx")
+
+write.xlsx(sparse.metabolites.1.UC, file = "sparse.metabolites.1.UC.xlsx")
+write.xlsx(sparse.metabolites.2.UC, file = "sparse.metabolites.2.UC.xlsx")
+write.xlsx(sparse.microbiota.1.UC, file = "sparse.microbiota.1.UC.xlsx")
+write.xlsx(sparse.microbiota.2.UC, file = "sparse.microbiota.2.UC.xlsx")
+write.xlsx(sparse.enzymes.1.UC, file = "sparse.enzymes.1.UC.xlsx") 
+write.xlsx(sparse.enzymes.2.UC, file = "sparse.enzymes.2.UC.xlsx") 
+
+write.xlsx(vip.metabolites.1.UC, file = "vip.metabolites.1.UC.xlsx")
+write.xlsx(vip.metabolites.2.UC, file = "vip.metabolites.2.UC.xlsx")
+write.xlsx(vip.microbiota.1.UC, file = "vip.microbiota.1.UC.xlsx")
+write.xlsx(vip.microbiota.2.UC, file = "vip.microbiota.2.UC.xlsx")
+write.xlsx(vip.enzymes.1.UC, file = "vip.enzymes.1.UC.xlsx") 
+write.xlsx(vip.enzymes.2.UC, file = "vip.enzymes.2.UC.xlsx")
+```
+
+```{r UC - Variates Metabolites Microbiota and Enzymes Variates }
+variates.X.metabolites.UC <- MyResult.splsda.metabolites.final.UC$variates
+variates.X.microbiota.UC <- MyResult.splsda.microbiota.final.UC$variates
+variates.X.enzymes.UC <- MyResult.splsda.enzymes.final.UC$variates
+Y_UC_diagnosis_train
+variates.X.metabolites.UC <- as.data.frame (variates.X.metabolites.UC) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_UC_diagnosis_train)  
+variates.X.metabolites.UC$Diagnosis <- as.factor(variates.X.metabolites.UC$Diagnosis)
+variates.X.metabolites.UC
+
+variates.X.microbiota.UC <- as.data.frame (variates.X.microbiota.UC) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_UC_diagnosis_train)  
+variates.X.microbiota.UC$Diagnosis <- as.factor(variates.X.microbiota.UC$Diagnosis)
+variates.X.microbiota.UC
+
+variates.X.enzymes.UC <- as.data.frame (variates.X.enzymes.UC) %>% dplyr::select(X.comp1, X.comp2) %>% cbind (Y_UC_diagnosis_train)  
+variates.X.enzymes.UC$Diagnosis <- as.factor(variates.X.enzymes.UC$Diagnosis)
+variates.X.enzymes.UC
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+UC.metabolites.plot.scores <- ggplot(variates.X.metabolites.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2"))
+UC.metabolites.plot.scores
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("UC.metabolites.plot.scores.pdf", width = 10, height = 8)
+UC.metabolites.plot.scores <- ggplot(variates.X.metabolites.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2"))
+UC.metabolites.plot.scores 
+auc.plsda <- auroc (MyResult.splsda.metabolites.final.UC)
+dev.off()
+```
+
+```{r ffig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+UC.microbiota.plot.scores <- ggplot(variates.X.microbiota.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2"))
+UC.microbiota.plot.scores
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("UC.microbiota.plot.scores.pdf", width = 10, height = 8)
+UC.microbiota.plot.scores <-ggplot(variates.X.microbiota.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue', "coral2"))
+UC.microbiota.plot.scores
+auc.plsda <- auroc (MyResult.splsda.microbiota.final.UC)
+dev.off()
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+UC.enzymes.plot.scores <- ggplot(variates.X.enzymes.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue',"coral2"))
+UC.enzymes.plot.scores
+```
+
+```{r fig.width=12, fig.height=12, fig.fullwidth=TRUE, dpi = 350}
+pdf("UC.enzymes.plot.scores.pdf", width = 10, height = 8)
+UC.enzymes.plot.scores <- ggplot(variates.X.enzymes.UC, aes(x=X.comp1, y=X.comp2, group = Diagnosis, color=Diagnosis)) + geom_point(aes(shape=Diagnosis, color=Diagnosis), size = 10) + stat_ellipse(linetype=1, lwd =1.2) + theme(legend.text = element_text(colour="black", size=10)) +  theme(legend.title = element_text(colour="black", size=10)) + labs(x = "X-variate 1 = 17% expl.var", y = "X-variate = 17% expl.var") + theme(axis.title.x = element_text(size = 10)) + theme(axis.title.y = element_text(size = 10)) +theme(axis.title.y = element_text(size = 10)) + theme_bw(base_size = 20) + theme(legend.position="top") + scale_shape_manual(values=c(19,18)) +scale_color_manual(values = c('cornflowerblue',"coral2" ))
+UC.enzymes.plot.scores
+auc.plsda <- auroc (MyResult.splsda.enzymes.final.UC)
+dev.off()
+```
+
+```{r SessionInfo}
+sessionInfo()
+```
+
+
